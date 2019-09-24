@@ -161,19 +161,24 @@ _loop:
 ;;
 .scope
 print_message:
+	jsr dsp_wait_idle
+
+	;; array index
 	ldx #$00
 
 _loop:
 	ldy message,x
 	beq _end
 
-	jsr dsp_wait_idle
-
 	lda #$A0 ;; RS | E
 	sta PER_IO_A
 	sty PER_IO_B
 	lda #$20 ;; RS
 	sta PER_IO_A
+
+	lda #20
+	jsr delay
+
 	inx
 	jmp _loop
 
