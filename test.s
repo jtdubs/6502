@@ -13,124 +13,166 @@
 .alias PER_A_DSP_RW $40
 .alias PER_A_DSP_E  $80
 
+;;
+;; CODE SEGMENT starts at 0x8000 which is the beginnnig of the EEPROM
+;;
+
 .advance $8000, $ff
 
-reset:
+;;
+;; on_reset: Main entry point
+;;
+.scope
+on_reset:
+	jsr per_init
+	jsr dsp_init
+	jsr print_message
 
-	;; setup the peripheral controller
-setup_per:
+_loop:
+	; read the button states and dispatch
+	ldx PER_IO_A
+    jmp _loop
+.scend
+
+
+;;
+;; per_init: Initialize the peripheral controller
+;;
+;; Registers: A
+;;
+.scope
+per_init:
 	;; set buttons to inputs (low 5 pins of port A), and high three to outputs
-    ldx #$E0
-    stx PER_DDR_A
+    lda #$E0
+    sta PER_DDR_A
+	rts
+.scend
 
-	;; initialize the display
+
+;;
+;; dsp_init: Initialize the display
+;;
+;; Registers: A, X
+;;
+;; Side Effects:
+;; - Port A:E bit set
+;;
+.scope
 dsp_init:
-	;; set port B to input
-    ldx #$00
-    stx PER_DDR_B
-
-	;; read the instruction register
-	ldx #$C0 ;; RW | E
-	stx PER_IO_A
-
-	;; wait for display initialization 
-dsp_init_loop:
-	lda PER_IO_B
-	and #$80 ;; busy flag
-	bne dsp_init_loop
-
-	;; set port B to output
-    ldx #$FF
-    stx PER_DDR_B
-
 	ldx #$80 ;; E
 
+	jsr dsp_wait_idle
+
+	;; Call "Function set" with Data Length = 8-bit, Display Lines = 2, Font = 5x7
 	stx PER_IO_A
-	lda #$38 ;; set to 8-bit, 2-line, 5x7 chars
+	lda #$38
+	sta PER_IO_B
+	stz PER_IO_A
+	
+	jsr dsp_wait_idle
+
+	;; Call "Display on/off control" with Display on, Cursor on, blink on
+	stx PER_IO_A
+	lda #$0F
 	sta PER_IO_B
 	stz PER_IO_A
 
+	jsr dsp_wait_idle
+
+	;; Call "Entry mode set" with Auto Increment enabled
 	stx PER_IO_A
-	lda #$0F ;; set display on, cursor on, blink on
+	lda #$06
 	sta PER_IO_B
 	stz PER_IO_A
 
+	jsr dsp_wait_idle
+
+	;; Call "Clear display"
 	stx PER_IO_A
-	lda #$06 ;; set to auto-increment
+	lda #$01
 	sta PER_IO_B
 	stz PER_IO_A
 
-	ldx #$A0 ;; E | RS
-	ldy #$20 ;; RS
+	;; set E back high in prep for next call
+	stx PER_IO_A
 
+	rts
+.scend
+
+
+;;
+;; dsp_wait_idle: Wait for display idle
+;;
+;; Registers: A
+;;
+;; Side Effects:
+;; - PER_IO_B set to OUTPUT
+;; - PER_IO_A RW & E flags set
+;;
+.scope
+dsp_wait_idle:
+	;; set port B to input
+    lda #$00
+    sta PER_DDR_B
+	;; set flags for reading the instruction register
+	lda #$C0 ;; RW | E
+	sta PER_IO_A
+_loop:
+	;; read the instruction register and loop until not busy
+	lda PER_IO_B
+	and #$80 ;; busy flag
+	bne _loop
+_cleanup:
+	;; set port B back to output
+    lda #$FF
+    sta PER_DDR_B
+	rts
+.scend
+
+
+;;
+;; print_message: Print the "messaage" to the dislay
+;;
+.scope
 print_message:
 	ldx #$00
 
-print_loop:
-	lda message,x
-	beq main_loop
-	ldy #$A0
-	sty PER_IO_A
-	sta PER_IO_B
-	ldy #$20
-	sty PER_IO_A
+_loop:
+	ldy message,x
+	beq _end
+
+	jsr dsp_wait_idle
+
+	lda #$A0 ;; RS | E
+	sta PER_IO_A
+	sty PER_IO_B
+	lda #$20 ;; RS
+	sta PER_IO_A
 	inx
-	jmp print_loop
+	jmp _loop
 
-main_loop:
-	; read the button states and dispatch
-	ldx PER_IO_A
-    txa
-	and #$01
-	beq on_btn
-    txa
-	and #$02
-	beq on_up
-    txa
-	and #$04
-	beq on_down
-    txa
-	and #$08
-	beq on_left
-    txa
-	and #$10
-	beq on_right
-    jmp main_loop
+_end:
+	rts
+.scend
 
-on_btn:
-    nop
-    nop
-    jmp main_loop
 
-on_up:
-    nop
-    nop
-    jmp main_loop
-
-on_down:
-    nop
-    nop
-    jmp main_loop
-
-on_left:
-    nop
-    nop
-    jmp main_loop
-
-on_right:
-    nop
-    nop
-    jmp main_loop
-
+;;
+;; DATA SEGMENT starts at 0x9000 which is at offset 0x1000 on the EEPROM
+;;
 .advance $9000, $ff
-message:
-.byte "Hello, world!",0
 
+message: .byte "Hello, world!",0
+
+
+;;
+;; VECTOR TABLEs start at 0xFFF4, which is at the end of the EEPROM
+;;
 .advance $fff4, $ff
+
 vector_table:
-.word $0000 ; cop
-.word $0000 ; --
-.word $0000 ; abort
-.word $0000 ; nmi
-.word $8000 ; reset
-.word $0000 ; irq / brk
+	.word $0000 ; cop
+	.word $0000 ; --
+	.word $0000 ; abort
+	.word $0000 ; nmi
+	.word on_reset
+	.word $0000 ; irq / brk
