@@ -1,4 +1,5 @@
-out.bin
-out.hex
-out.map
+*.bin
+*.hex
+*.map
+*.lst
 *.swp
