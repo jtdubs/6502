@@ -40,9 +40,9 @@
 .alias PARAM_SHIFT_LEFT       $00
 .alias PARAM_FN_8BIT          $10
 .alias PARAM_FN_4BIT          $00
-.alias PARAM_FN_2LINE         $80
+.alias PARAM_FN_2LINE         $08
 .alias PARAM_FN_1LINE         $00
-.alias PARAM_FN_5x10          $40
+.alias PARAM_FN_5x10          $04
 .alias PARAM_FN_5x8           $00
 .alias BUSY_FLAG              $80
 
