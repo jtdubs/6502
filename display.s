@@ -50,6 +50,8 @@
 ;;
 ;; dsp_init: Initialize the HD44780 Display Controller
 ;;
+;; Parameters: None
+;;
 ;; Registers Used: A, X
 ;;
 .scope
@@ -85,6 +87,32 @@ dsp_init:
 	;; Call "Clear display"
 	stx IO_A
 	lda #FN_CLEAR
+	sta IO_B
+	stz IO_A
+
+	;; set E back high in prep for next call
+	stx IO_A
+
+	rts
+.scend
+
+
+;;
+;; dsp_home: Moves display back to home position
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_home:
+	ldx #CTRL_E
+
+	jsr dsp_wait_idle
+
+	;; Call "Clear display"
+	stx IO_A
+	lda #FN_HOME
 	sta IO_B
 	stz IO_A
 
