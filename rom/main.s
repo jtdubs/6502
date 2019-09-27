@@ -32,7 +32,7 @@
 ;;
 ;; Buttons
 ;;
-.alias BTN_TRIGGER  $12
+.alias BTN_TRIGGER  $01
 .alias BTN_UP       $02
 .alias BTN_DOWN     $04
 .alias BTN_LEFT     $08
