@@ -70,20 +70,25 @@ _hw_init:
     jsr dsp_print
 
 _loop:
-    ;; read the button states and dispatch
+    ;; read the button state
     ldx IO_A
+
+    ;; if button state hasn't changed, keep looping
     txa
     cmp VAR_BUTTON_STATE
     beq _loop
     sta VAR_BUTTON_STATE
+
+    ;; call button events
     and #BTN_UP
-    beq _up
+    beq _on_up
     txa
     and #BTN_DOWN
-    beq _down
+    beq _on_down
     jmp _loop
 
-_up:
+_on_up:
+    ;; on UP button, increment message index, up to 3
     lda VAR_MESSAGE_IDX
     cmp #03
     beq _loop
@@ -91,7 +96,8 @@ _up:
     sta VAR_MESSAGE_IDX
     jmp _refresh
 
-_down:
+_on_down:
+    ;; on DOWN button, decrement message index, down to 0
     lda VAR_MESSAGE_IDX
     cmp #00
     beq _loop
@@ -100,6 +106,7 @@ _down:
     jmp _refresh
 
 _refresh:
+    ;; refresh the display based on new message index
     asl
     tax
     lda messages,x
