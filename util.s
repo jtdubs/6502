@@ -8,6 +8,12 @@
 
 
 ;;
+;; Zero Page Variables
+;;
+.alias VAR_RAM_PTR  $02
+
+
+;;
 ;; delay_us: A short delay busy-loop
 ;;
 ;; Parameters:
@@ -46,4 +52,33 @@ _target:
     dec             ;; 2 cycles
     bne delay_ms    ;; 3 cycles
     rts             ;; 8 cycles
+.scend
+
+
+;;
+;; zero_ram: Zero out RAM (above the stack)
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, Y
+;;
+.scope
+zero_ram:
+    lda #[<$0200]
+    sta VAR_RAM_PTR
+    lda #[>$0200]
+    sta [VAR_RAM_PTR+1]
+_zero_page:
+    ldy #$00
+    lda #$00
+_loop:
+    sta (VAR_RAM_PTR),y
+    iny
+    bne _loop
+_next_page:
+    lda [VAR_RAM_PTR+1]
+    inc
+    sta [VAR_RAM_PTR+1]
+    cmp $40
+    bne _zero_page
 .scend

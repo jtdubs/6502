@@ -1,9 +1,11 @@
 ;; Memory Map:
 ;; 0000 - 0001:    RAM - Zero Page - VAR_MESSAGE_PTR
-;; 0000 - 00ff:    RAM - Zero Page - FREE
+;; 0002 - 0003:    RAM - Zero Page - VAR_RAM_PTR
+;; 0004 - 00ff:    RAM - Zero Page - FREE
 ;; 0100 - 01ff:    RAM - Stack
 ;; 0200 - 0202:    RAM - Display Variables
-;; 0203 - 3fff:    RAM - FREE
+;; 0203 - 0204:    RAM - Main Variables
+;; 0205 - 3fff:    RAM - FREE
 ;; 4000 - 5fff:    NOT MAPPED
 ;; 6000 - 600f:    Peripheral Controller Registers
 ;; 6010 - 7fff:    NOT MAPPED
@@ -23,8 +25,8 @@
 ;;
 ;; Variables
 ;;
-.alias VAR_MESSAGE_IDX  $0210
-.alias VAR_BUTTON_STATE $0211
+.alias VAR_MESSAGE_IDX  $0203
+.alias VAR_BUTTON_STATE $0204
 
 
 ;;
@@ -47,6 +49,8 @@ on_reset:
     txs
 
     ;; initialize hardware
+_hw_init:
+    jsr zero_ram
     jsr per_init
     jsr dsp_init
 
