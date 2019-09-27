@@ -106,7 +106,7 @@ dsp_init:
     sta VAR_FUNCTION
 
     ;; display, cursor & blink on
-    lda #[FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON | PARAM_DC_CURSOR_ON | PARAM_DC_BLINK_ON]
+    lda #[FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON]
     sta VAR_CONTROL
 
     ;; auto-increment on output

@@ -49,8 +49,6 @@ on_reset:
     ;; initialize hardware
     jsr per_init
     jsr dsp_init
-    jsr dsp_cursor_off
-    jsr dsp_blink_off
 
     ;; initial message index and button state are 0
     stz VAR_MESSAGE_IDX
