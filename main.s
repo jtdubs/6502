@@ -1,3 +1,21 @@
+;; Memory Map:
+;; 0000 - 00ff:    RAM - Free (Zero Page)
+;; 0100 - 01ff:    RAM - Stack
+;; 0200 - 0202:    RAM - Display Variables
+;; 0203 - 3fff:    RAM - Free
+;; 4000 - 5fff:    NOT MAPPED
+;; 6000 - 600f:    Peripheral Controller Registers
+;; 6010 - 7fff:    NOT MAPPED
+;; 8000 - ffff:    ROM
+
+
+;;
+;; zero page definitions
+;;
+
+.alias VAR_MESSAGE_PTR  $00
+
+
 ;;
 ;; CODE SEGMENT starts at 0x8000 which is the beginnnig of the EEPROM
 ;;
@@ -13,16 +31,20 @@
 ;; on_reset: Main Entry Point
 ;;
 .scope
+on_reset:
     ;; initialize stack pointer
     ldx #$ff
     txs
 
-on_reset:
     ;; initialize hardware
     jsr per_init
     jsr dsp_init
 
-    ;; print the welcome message
+    ;; print message
+    lda #<message
+    sta VAR_MESSAGE_PTR
+    lda #>message
+    sta [VAR_MESSAGE_PTR+1]
     jsr print_message
 
 _loop:
@@ -32,30 +54,41 @@ _loop:
 .scend
 
 
+
+
 ;;
 ;; print_message: Print the "messaage" to the dislay
+;;
+;; Parameters: Y - Zero-page index of message pointer
+;;
+;; Registers Used: A, Y
 ;;
 .scope
 print_message:
     jsr dsp_wait_idle
 
-    ;; array index
-    ldx #$00
+    ldy #$00 ;; Y is array index
 
 _loop:
-    ldy message,x
+    ;; load the character into IO B
+    lda (VAR_MESSAGE_PTR),y
     beq _end
+    sta IO_B
 
+    ;; set E high
     lda #[CTRL_RS | CTRL_E]
     sta IO_A
-    sty IO_B
+
+    ;; set E low
     lda #CTRL_RS
     sta IO_A
 
+    ;; wait for character to write (40us)
     lda #3
     jsr delay_us
 
-    inx
+    ;; advance to next character
+    iny
     jmp _loop
 
 _end:
@@ -64,9 +97,9 @@ _end:
 
 
 ;;
-;; DATA SEGMENT starts at 0x9000 which is at offset 0x1000 on the EEPROM
+;; DATA SEGMENT starts at end of EEPROM
 ;;
-.advance $9000, $ff
+.advance $f000, $ff
 
 message: .byte "Hello, world!",0
 

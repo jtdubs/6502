@@ -1,4 +1,13 @@
 ;;
+;; util.s - Utility functions
+;;
+;; Functions:
+;; - delay_us - Delay by multiple of 10us
+;; - delay_ms - Delay by multiple o 1ms
+;;
+
+
+;;
 ;; delay_us: A short delay busy-loop
 ;;
 ;; Parameters:

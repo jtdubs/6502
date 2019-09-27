@@ -1,4 +1,11 @@
 ;;
+;; periph.s - Driver for the WC65C22 peripheral controller
+;;
+;; Functions:
+;; - per_init - Initialize the controller
+
+
+;;
 ;; Memory-mapped Regiser Definitions
 ;;
 
@@ -11,6 +18,7 @@
 ;;
 ;; DDR directions
 ;;
+
 .alias DIR_IN  $00
 .alias DIR_OUT $ff
 
