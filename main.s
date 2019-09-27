@@ -13,6 +13,10 @@
 ;; on_reset: Main Entry Point
 ;;
 .scope
+    ;; initialize stack pointer
+    ldx #$ff
+    txs
+
 on_reset:
     ;; initialize hardware
     jsr per_init
@@ -48,8 +52,8 @@ _loop:
     lda #CTRL_RS
     sta IO_A
 
-    lda #20
-    jsr delay
+    lda #3
+    jsr delay_us
 
     inx
     jmp _loop

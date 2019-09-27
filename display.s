@@ -1,7 +1,35 @@
 ;;
+;; display.s - Driver for the HD4770 display peripheral
+;;
+;; Functions:
+;; - dsp_init           - Initialize the display
+;; - dsp_clear          - Clear the display
+;; - dsp_home           - Move cursor to home
+;; - dsp_display_on     - Turn the display on
+;; - dsp_display_off    - Turn the display off
+;; - dsp_cursor_on      - Turn the cursor on
+;; - dsp_cursor_off     - Turn the cursor off
+;; - dsp_blink_on       - Turn cursor blink on
+;; - dsp_blink_off      - Turn cursor blink off
+;; - dsp_scroll_left    - Scroll left
+;; - dsp_scroll_right   - Scroll right
+;; - dsp_autoscroll_on  - Turn autoscroll on
+;; - dsp_autoscroll_off - Turn autoscroll off
+;;
+
+
+;;
 ;; Dependencies
 ;;
 .require "periph.s"
+
+
+;;
+;; Variables
+;;
+.alias VAR_FUNCTION $0200
+.alias VAR_CONTROL  $0201
+.alias VAR_MODE     $0202
 
 
 ;;
@@ -31,19 +59,23 @@
 .alias PARAM_ENTRY_MODE_INC   $02
 .alias PARAM_ENTRY_MODE_DEC   $00
 .alias PARAM_ENTRY_MODE_SHIFT $01
+
 .alias PARAM_DC_DISPLAY_ON    $04
 .alias PARAM_DC_CURSOR_ON     $02
 .alias PARAM_DC_BLINK_ON      $01
+
 .alias PARAM_SHIFT_SCREEN     $80
 .alias PARAM_SHIFT_CURSOR     $00
 .alias PARAM_SHIFT_RIGHT      $40
 .alias PARAM_SHIFT_LEFT       $00
+
 .alias PARAM_FN_8BIT          $10
 .alias PARAM_FN_4BIT          $00
 .alias PARAM_FN_2LINE         $08
 .alias PARAM_FN_1LINE         $00
 .alias PARAM_FN_5x10          $04
 .alias PARAM_FN_5x8           $00
+
 .alias BUSY_FLAG              $80
 
 
@@ -58,68 +90,338 @@
 dsp_init:
     ldx #CTRL_E
 
-    jsr dsp_wait_idle
+    ;;
+    ;; Initialize variables with default values for each function
+    ;;
 
-    ;; Call "Function set" with Data Length = 8-bit, Display Lines = 2, Font = 5x7
-    stx IO_A
+    ;; 8-bit chars, 2 line display, 5x8 font
     lda #[FN_FUNCTION_SET | PARAM_FN_8BIT | PARAM_FN_2LINE | PARAM_FN_5x8]
-    sta IO_B
-    stz IO_A
-    
-    jsr dsp_wait_idle
+    sta VAR_FUNCTION
 
-    ;; Call "Display on/off control" with Display on, Cursor on, blink on
-    stx IO_A
+    ;; display, cursor & blink on
     lda #[FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON | PARAM_DC_CURSOR_ON | PARAM_DC_BLINK_ON]
-    sta IO_B
-    stz IO_A
+    sta VAR_CONTROL
 
-    jsr dsp_wait_idle
-
-    ;; Call "Entry mode set" with Auto Increment enabled
-    stx IO_A
+    ;; auto-increment on output
     lda #[FN_ENTRY_MODE | PARAM_ENTRY_MODE_INC]
+    sta VAR_MODE
+
+
+    ;;
+    ;; Perform initialization routine based on datasheet
+    ;;
+
+    ;; call "Function Set"
+    jsr dsp_wait_idle
+    stx IO_A
+    lda VAR_FUNCTION
     sta IO_B
     stz IO_A
 
+    ;; Call "Display Control"
     jsr dsp_wait_idle
+    stx IO_A
+    lda VAR_CONTROL
+    sta IO_B
+    stz IO_A
+
+    ;; Call "Entry mode Set"
+    jsr dsp_wait_idle
+    stx IO_A
+    lda VAR_MODE
+    sta IO_B
+    stz IO_A
 
     ;; Call "Clear display"
+    jsr dsp_wait_idle
     stx IO_A
     lda #FN_CLEAR
     sta IO_B
     stz IO_A
 
-    ;; set E back high in prep for next call
-    stx IO_A
-
     rts
 .scend
 
 
-;; TODO: dsp_clear
+;;
+;; dsp_clear: Clear the display
+;;
+;; Parameters: None
+;;
+;; Registers Used: A
+;;
+.scope
+dsp_clear:
+    ;; Call "Clear"
+    jsr dsp_wait_idle
+    lda #CTRL_E
+    sta IO_A
+    lda #FN_CLEAR
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
 
 ;;
 ;; dsp_home: Moves display back to home position
 ;;
 ;; Parameters: None
 ;;
-;; Registers Used: A, X
+;; Registers Used: A
 ;;
 .scope
 dsp_home:
-    ldx #CTRL_E
-
+    ;; Call "Home"
     jsr dsp_wait_idle
-
-    ;; Call "Clear display"
-    stx IO_A
+    lda #CTRL_E
+    sta IO_A
     lda #FN_HOME
     sta IO_B
     stz IO_A
 
-    ;; set E back high in prep for next call
+    rts
+.scend
+
+
+;;
+;; dsp_display_on: Turn on the display
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_display_on:
+    ;; set Display bit in VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_DISPLAY_ON
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
     stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_display_off: Turn off the display
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_display_off:
+    ;; clear Display bit in VAR_CONTROL
+    lda VAR_CONTROL
+    and #[$FF ^ PARAM_DC_DISPLAY_ON]
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_cursor_on: Turn on the cursor
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_cursor_on:
+    ;; set Cursor bit in VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_CURSOR_ON
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_cursor_off: Turn off the cursor
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_cursor_off:
+    ;; clear Cursor bit in VAR_CONTROL
+    lda VAR_CONTROL
+    and #[$FF ^ PARAM_DC_CURSOR_ON]
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_blink_on: Turn on cursor blink
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_blink_on:
+    ;; set Blink bit in VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_BLINK_ON
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_blink_off: Turn off the blink
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_blink_off:
+    ;; clear Cursor bit in VAR_CONTROL
+    lda VAR_CONTROL
+    and #[$FF ^ PARAM_DC_BLINK_ON]
+    sta VAR_CONTROL
+
+    ;; call "Display Control" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_scroll_left: Scroll the display one character left
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_scroll_left:
+    ;; call "Shift" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_LEFT]
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_scroll_right: Scroll the display one character right
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_scroll_right:
+    ;; call "Shift" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_RIGHT]
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_autoscroll_on: Enable autoscroll
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_autoscroll_on:
+    ;; set Shift bit in VAR_MODE
+    lda VAR_MODE
+    ora #PARAM_ENTRY_MODE_SHIFT
+    sta VAR_MODE
+
+    ;; call "Entry Mode" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
+
+    rts
+.scend
+
+
+;;
+;; dsp_autoscroll_off: Disable autoscroll
+;;
+;; Parameters: None
+;;
+;; Registers Used: A, X
+;;
+.scope
+dsp_autoscroll_off:
+    ;; clear Shift bit in VAR_MODE
+    lda VAR_MODE
+    and #[$FF ^ PARAM_ENTRY_MODE_SHIFT]
+    sta VAR_MODE
+
+    ;; call "Entry Mode" function
+    jsr dsp_wait_idle
+    ldx #CTRL_E
+    stx IO_A
+    sta IO_B
+    stz IO_A
 
     rts
 .scend

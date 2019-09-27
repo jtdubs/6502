@@ -10,7 +10,7 @@
 delay_us:
     dec             ;; 2 cycles
     jmp _target     ;; 3 cycles
-_target
+_target:
     nop             ;; 2 cycles
     bne delay_us    ;; 3 cycles
     nop             ;; 2 cycles
@@ -33,7 +33,7 @@ _loop:
     dex             ;; 2 cycles
     bne _loop       ;; 3 cycles
     jmp _target     ;; 3 cycles
-_target
+_target:
     dec             ;; 2 cycles
     bne delay_ms    ;; 3 cycles
     rts             ;; 8 cycles
