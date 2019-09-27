@@ -29,7 +29,7 @@ _dummy:
     nop             ;; 2 cycles
     dec             ;; 2 cycles
     bne delay_us    ;; 3 cycles
-_cleanup;
+_cleanup:
     ;; waste 6 cycles to total non-loop overhead is jsr + 3*nop + rts = 6us + 3*2us + 8us = 20us
     nop             ;; 2 cycles
     nop             ;; 2 cycles
