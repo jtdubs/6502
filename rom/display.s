@@ -1,5 +1,5 @@
 ;;
-;; display.s - Driver for the HD4770 display peripheral
+;; display.s - Driver for the Hitachi HD44780U display controller
 ;;
 ;; Functions:
 ;; - dsp_init           - Initialize the display
