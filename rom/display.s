@@ -472,7 +472,7 @@ _loop:
     sta IO_A
 
     ;; wait for character to write (40us)
-    lda #3
+    lda #2
     jsr delay_us
 
     ;; advance to next character
