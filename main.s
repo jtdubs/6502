@@ -20,6 +20,22 @@
 .require "periph.s"
 .require "display.s"
 
+;;
+;; Variables
+;;
+.alias VAR_MESSAGE_IDX  $0210
+.alias VAR_BUTTON_STATE $0211
+
+
+;;
+;; Buttons
+;;
+.alias BTN_TRIGGER  $12
+.alias BTN_UP       $02
+.alias BTN_DOWN     $04
+.alias BTN_LEFT     $08
+.alias BTN_RIGHT    $10
+
 
 ;;
 ;; on_reset: Main Entry Point
@@ -33,17 +49,66 @@ on_reset:
     ;; initialize hardware
     jsr per_init
     jsr dsp_init
+    jsr dsp_cursor_off
+    jsr dsp_blink_off
+
+    ;; initial message index and button state are 0
+    stz VAR_MESSAGE_IDX
+    stz VAR_BUTTON_STATE
 
     ;; print message
-    lda #<message
+    lda VAR_MESSAGE_IDX
+    asl
+    tax
+    lda messages,x
     sta VAR_MESSAGE_PTR
-    lda #>message
+    inx
+    lda messages,x
     sta [VAR_MESSAGE_PTR+1]
-    jsr print_message
+    jsr dsp_print
 
 _loop:
     ;; read the button states and dispatch
     ldx IO_A
+    txa
+    cmp VAR_BUTTON_STATE
+    beq _loop
+    sta VAR_BUTTON_STATE
+    and #BTN_UP
+    beq _up
+    txa
+    and #BTN_DOWN
+    beq _down
+    jmp _loop
+
+_up:
+    lda VAR_MESSAGE_IDX
+    cmp #03
+    beq _loop
+    inc
+    sta VAR_MESSAGE_IDX
+    jmp _refresh
+
+_down:
+    lda VAR_MESSAGE_IDX
+    cmp #00
+    beq _loop
+    dec
+    sta VAR_MESSAGE_IDX
+    jmp _refresh
+
+_refresh:
+    asl
+    tax
+    lda messages,x
+    sta VAR_MESSAGE_PTR
+    inx
+    lda messages,x
+    sta [VAR_MESSAGE_PTR+1]
+
+    jsr dsp_clear
+    jsr dsp_print
+
     jmp _loop
 .scend
 
@@ -54,7 +119,17 @@ _loop:
 
 .advance $f000, $ff
 
-message: .byte "Hello, world!",0
+messages:
+    .word message1
+    .word message2
+    .word message3
+    .word message4
+    .word 0
+
+message1: .byte "Hello, world!",0
+message2: .byte "Goodbye, world!",0
+message3: .byte "OMG WTF BBQ",0
+message4: .byte ".............",0
 
 
 ;;
