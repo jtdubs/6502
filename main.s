@@ -14,16 +14,16 @@
 ;;
 .scope
 on_reset:
-	;; initialize hardware
-	jsr per_init
-	jsr dsp_init
+    ;; initialize hardware
+    jsr per_init
+    jsr dsp_init
 
-	;; print the welcome message
-	jsr print_message
+    ;; print the welcome message
+    jsr print_message
 
 _loop:
-	;; read the button states and dispatch
-	ldx IO_A
+    ;; read the button states and dispatch
+    ldx IO_A
     jmp _loop
 .scend
 
@@ -33,29 +33,29 @@ _loop:
 ;;
 .scope
 print_message:
-	jsr dsp_wait_idle
+    jsr dsp_wait_idle
 
-	;; array index
-	ldx #$00
+    ;; array index
+    ldx #$00
 
 _loop:
-	ldy message,x
-	beq _end
+    ldy message,x
+    beq _end
 
-	lda #[CTRL_RS | CTRL_E]
-	sta IO_A
-	sty IO_B
-	lda #CTRL_RS
-	sta IO_A
+    lda #[CTRL_RS | CTRL_E]
+    sta IO_A
+    sty IO_B
+    lda #CTRL_RS
+    sta IO_A
 
-	lda #20
-	jsr delay
+    lda #20
+    jsr delay
 
-	inx
-	jmp _loop
+    inx
+    jmp _loop
 
 _end:
-	rts
+    rts
 .scend
 
 
@@ -73,9 +73,9 @@ message: .byte "Hello, world!",0
 .advance $fff4, $ff
 
 vector_table:
-	.word $0000 ; cop
-	.word $0000 ; --
-	.word $0000 ; abort
-	.word $0000 ; nmi
-	.word on_reset
-	.word $0000 ; irq / brk
+    .word $0000 ; cop
+    .word $0000 ; --
+    .word $0000 ; abort
+    .word $0000 ; nmi
+    .word on_reset
+    .word $0000 ; irq / brk

@@ -1,24 +1,40 @@
 ;;
-;; delay: Delay by A NOPs (1 NOP = 2us)
+;; delay_us: A short delay busy-loop
+;;
+;; Parameters:
+;; - A - Delay is A * 10us + 10us
+;;
+;; Registers Used: A
 ;;
 .scope
-delay:
-	dec
-	bne delay
-	rts
+delay_us:
+    dec             ;; 2 cycles
+    jmp _target     ;; 3 cycles
+_target
+    nop             ;; 2 cycles
+    bne delay_us    ;; 3 cycles
+    nop             ;; 2 cycles
+    rts             ;; 8 cycles
 .scend
 
 
 ;;
-;; delay_long: Delay by A * 255 NOPs (1 NOP = 2us)
+;; delay_ms: A long delay busy-loop
+;;
+;; Parameters:
+;; - A - Delay is A milliseconds + 8us
+;;
+;; Registers Used: A, X
 ;;
 .scope
-delay_long:
-	ldx #255
+delay_ms:
+    ldx #198        ;; 2 cycles
 _loop:
-	dex
-	bne _loop
-	dec
-	bne delay_long
-	rts
+    dex             ;; 2 cycles
+    bne _loop       ;; 3 cycles
+    jmp _target     ;; 3 cycles
+_target
+    dec             ;; 2 cycles
+    bne delay_ms    ;; 3 cycles
+    rts             ;; 8 cycles
 .scend

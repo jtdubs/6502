@@ -56,46 +56,48 @@
 ;;
 .scope
 dsp_init:
-	ldx #CTRL_E
+    ldx #CTRL_E
 
-	jsr dsp_wait_idle
+    jsr dsp_wait_idle
 
-	;; Call "Function set" with Data Length = 8-bit, Display Lines = 2, Font = 5x7
-	stx IO_A
-	lda #[FN_FUNCTION_SET | PARAM_FN_8BIT | PARAM_FN_2LINE | PARAM_FN_5x8]
-	sta IO_B
-	stz IO_A
-	
-	jsr dsp_wait_idle
+    ;; Call "Function set" with Data Length = 8-bit, Display Lines = 2, Font = 5x7
+    stx IO_A
+    lda #[FN_FUNCTION_SET | PARAM_FN_8BIT | PARAM_FN_2LINE | PARAM_FN_5x8]
+    sta IO_B
+    stz IO_A
+    
+    jsr dsp_wait_idle
 
-	;; Call "Display on/off control" with Display on, Cursor on, blink on
-	stx IO_A
-	lda #[FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON | PARAM_DC_CURSOR_ON | PARAM_DC_BLINK_ON]
-	sta IO_B
-	stz IO_A
+    ;; Call "Display on/off control" with Display on, Cursor on, blink on
+    stx IO_A
+    lda #[FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON | PARAM_DC_CURSOR_ON | PARAM_DC_BLINK_ON]
+    sta IO_B
+    stz IO_A
 
-	jsr dsp_wait_idle
+    jsr dsp_wait_idle
 
-	;; Call "Entry mode set" with Auto Increment enabled
-	stx IO_A
-	lda #[FN_ENTRY_MODE | PARAM_ENTRY_MODE_INC]
-	sta IO_B
-	stz IO_A
+    ;; Call "Entry mode set" with Auto Increment enabled
+    stx IO_A
+    lda #[FN_ENTRY_MODE | PARAM_ENTRY_MODE_INC]
+    sta IO_B
+    stz IO_A
 
-	jsr dsp_wait_idle
+    jsr dsp_wait_idle
 
-	;; Call "Clear display"
-	stx IO_A
-	lda #FN_CLEAR
-	sta IO_B
-	stz IO_A
+    ;; Call "Clear display"
+    stx IO_A
+    lda #FN_CLEAR
+    sta IO_B
+    stz IO_A
 
-	;; set E back high in prep for next call
-	stx IO_A
+    ;; set E back high in prep for next call
+    stx IO_A
 
-	rts
+    rts
 .scend
 
+
+;; TODO: dsp_clear
 
 ;;
 ;; dsp_home: Moves display back to home position
@@ -106,47 +108,49 @@ dsp_init:
 ;;
 .scope
 dsp_home:
-	ldx #CTRL_E
+    ldx #CTRL_E
 
-	jsr dsp_wait_idle
+    jsr dsp_wait_idle
 
-	;; Call "Clear display"
-	stx IO_A
-	lda #FN_HOME
-	sta IO_B
-	stz IO_A
+    ;; Call "Clear display"
+    stx IO_A
+    lda #FN_HOME
+    sta IO_B
+    stz IO_A
 
-	;; set E back high in prep for next call
-	stx IO_A
+    ;; set E back high in prep for next call
+    stx IO_A
 
-	rts
+    rts
 .scend
 
 
 ;;
 ;; dsp_wait_idle: Wait for display idle
 ;;
-;; Registers: A
+;; Parameters: None
+;;
+;; Registers Used: A
 ;;
 .scope
 dsp_wait_idle:
-	;; set port B to input
+    ;; set port B to input
     lda #DIR_IN
     sta DDR_B
 
-	;; set flags for reading the instruction register
-	lda #[CTRL_RW | CTRL_E]
-	sta IO_A
+    ;; set flags for reading the instruction register
+    lda #[CTRL_RW | CTRL_E]
+    sta IO_A
 
 _loop:
-	;; read the instruction register and loop until not busy
-	lda IO_B
-	and #BUSY_FLAG
-	bne _loop
+    ;; read the instruction register and loop until not busy
+    lda IO_B
+    and #BUSY_FLAG
+    bne _loop
 
 _cleanup:
-	;; set port B back to output
+    ;; set port B back to output
     lda #DIR_OUT
     sta DDR_B
-	rts
+    rts
 .scend

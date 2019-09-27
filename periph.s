@@ -26,12 +26,14 @@
 ;;
 ;; per_init: Initialize the W65C22 Peripheral Controller
 ;;
+;; Parameters: None
+;;
 ;; Registers Used: A
 ;;
 .scope
 per_init:
-	;; set display control pins to outputs
+    ;; set display control pins to outputs
     lda #IO_A_DSP_MASK
     sta DDR_A
-	rts
+    rts
 .scend
