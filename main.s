@@ -1,19 +1,13 @@
 ;; Memory Map:
-;; 0000 - 00ff:    RAM - Free (Zero Page)
+;; 0000 - 0001:    RAM - Zero Page - VAR_MESSAGE_PTR
+;; 0000 - 00ff:    RAM - Zero Page - FREE
 ;; 0100 - 01ff:    RAM - Stack
 ;; 0200 - 0202:    RAM - Display Variables
-;; 0203 - 3fff:    RAM - Free
+;; 0203 - 3fff:    RAM - FREE
 ;; 4000 - 5fff:    NOT MAPPED
 ;; 6000 - 600f:    Peripheral Controller Registers
 ;; 6010 - 7fff:    NOT MAPPED
 ;; 8000 - ffff:    ROM
-
-
-;;
-;; zero page definitions
-;;
-
-.alias VAR_MESSAGE_PTR  $00
 
 
 ;;
@@ -54,51 +48,10 @@ _loop:
 .scend
 
 
-
-
-;;
-;; print_message: Print the "messaage" to the dislay
-;;
-;; Parameters: Y - Zero-page index of message pointer
-;;
-;; Registers Used: A, Y
-;;
-.scope
-print_message:
-    jsr dsp_wait_idle
-
-    ldy #$00 ;; Y is array index
-
-_loop:
-    ;; load the character into IO B
-    lda (VAR_MESSAGE_PTR),y
-    beq _end
-    sta IO_B
-
-    ;; set E high
-    lda #[CTRL_RS | CTRL_E]
-    sta IO_A
-
-    ;; set E low
-    lda #CTRL_RS
-    sta IO_A
-
-    ;; wait for character to write (40us)
-    lda #3
-    jsr delay_us
-
-    ;; advance to next character
-    iny
-    jmp _loop
-
-_end:
-    rts
-.scend
-
-
 ;;
 ;; DATA SEGMENT starts at end of EEPROM
 ;;
+
 .advance $f000, $ff
 
 message: .byte "Hello, world!",0
@@ -107,6 +60,7 @@ message: .byte "Hello, world!",0
 ;;
 ;; VECTOR TABLEs start at 0xFFF4, which is at the end of the EEPROM
 ;;
+
 .advance $fff4, $ff
 
 vector_table:

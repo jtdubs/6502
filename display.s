@@ -15,6 +15,7 @@
 ;; - dsp_scroll_right   - Scroll right
 ;; - dsp_autoscroll_on  - Turn autoscroll on
 ;; - dsp_autoscroll_off - Turn autoscroll off
+;; - dsp_print          - Print a message
 ;;
 
 
@@ -22,6 +23,12 @@
 ;; Dependencies
 ;;
 .require "periph.s"
+
+
+;;
+;; Zero Page Variables
+;;
+.alias VAR_MESSAGE_PTR  $00
 
 
 ;;
@@ -423,6 +430,44 @@ dsp_autoscroll_off:
     sta IO_B
     stz IO_A
 
+    rts
+.scend
+
+
+;;
+;; dsp_print: Print a message
+;;
+;; Parameters: VAR_MESSAGE_PTR
+;;
+;; Registers Used: A, Y
+;;
+.scope
+dsp_print:
+    jsr dsp_wait_idle
+
+    ldy #$00 ;; Y is array index
+
+_loop:
+    ;; load the character into IO B
+    lda (VAR_MESSAGE_PTR),y
+    beq _end
+    sta IO_B
+
+    ;; pulse E
+    lda #[CTRL_RS | CTRL_E]
+    sta IO_A
+    lda #CTRL_RS
+    sta IO_A
+
+    ;; wait for character to write (40us)
+    lda #3
+    jsr delay_us
+
+    ;; advance to next character
+    iny
+    jmp _loop
+
+_end:
     rts
 .scend
 

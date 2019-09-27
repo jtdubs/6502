@@ -8,7 +8,6 @@
 ;;
 ;; Memory-mapped Regiser Definitions
 ;;
-
 .alias IO_A  $600F
 .alias IO_B  $6000
 .alias DDR_A $6003
@@ -18,7 +17,6 @@
 ;;
 ;; DDR directions
 ;;
-
 .alias DIR_IN  $00
 .alias DIR_OUT $ff
 
@@ -26,7 +24,6 @@
 ;;
 ;; Port A masks for buttons vs. display control lines
 ;;
-
 .alias IO_A_BTN_MASK $1F
 .alias IO_A_DSP_MASK $E0
 
