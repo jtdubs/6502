@@ -159,8 +159,9 @@ dsp_init:
 ;;
 .scope
 dsp_clear:
-    ;; Call "Clear"
     jsr dsp_wait_idle
+
+    ;; Call "Clear"
     lda #CTRL_E
     sta IO_A
     lda #FN_CLEAR
@@ -180,8 +181,9 @@ dsp_clear:
 ;;
 .scope
 dsp_home:
-    ;; Call "Home"
     jsr dsp_wait_idle
+
+    ;; Call "Home"
     lda #CTRL_E
     sta IO_A
     lda #FN_HOME
@@ -201,13 +203,14 @@ dsp_home:
 ;;
 .scope
 dsp_display_on:
+    jsr dsp_wait_idle
+
     ;; set Display bit in VAR_CONTROL
     lda VAR_CONTROL
     ora #PARAM_DC_DISPLAY_ON
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -226,13 +229,14 @@ dsp_display_on:
 ;;
 .scope
 dsp_display_off:
+    jsr dsp_wait_idle
+
     ;; clear Display bit in VAR_CONTROL
     lda VAR_CONTROL
     and #[$FF ^ PARAM_DC_DISPLAY_ON]
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -251,13 +255,14 @@ dsp_display_off:
 ;;
 .scope
 dsp_cursor_on:
+    jsr dsp_wait_idle
+
     ;; set Cursor bit in VAR_CONTROL
     lda VAR_CONTROL
     ora #PARAM_DC_CURSOR_ON
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -276,13 +281,14 @@ dsp_cursor_on:
 ;;
 .scope
 dsp_cursor_off:
+    jsr dsp_wait_idle
+
     ;; clear Cursor bit in VAR_CONTROL
     lda VAR_CONTROL
     and #[$FF ^ PARAM_DC_CURSOR_ON]
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -301,13 +307,14 @@ dsp_cursor_off:
 ;;
 .scope
 dsp_blink_on:
+    jsr dsp_wait_idle
+
     ;; set Blink bit in VAR_CONTROL
     lda VAR_CONTROL
     ora #PARAM_DC_BLINK_ON
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -326,13 +333,14 @@ dsp_blink_on:
 ;;
 .scope
 dsp_blink_off:
+    jsr dsp_wait_idle
+
     ;; clear Cursor bit in VAR_CONTROL
     lda VAR_CONTROL
     and #[$FF ^ PARAM_DC_BLINK_ON]
     sta VAR_CONTROL
 
     ;; call "Display Control" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -351,8 +359,9 @@ dsp_blink_off:
 ;;
 .scope
 dsp_scroll_left:
-    ;; call "Shift" function
     jsr dsp_wait_idle
+
+    ;; call "Shift" function
     ldx #CTRL_E
     stx IO_A
     lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_LEFT]
@@ -372,8 +381,9 @@ dsp_scroll_left:
 ;;
 .scope
 dsp_scroll_right:
-    ;; call "Shift" function
     jsr dsp_wait_idle
+
+    ;; call "Shift" function
     ldx #CTRL_E
     stx IO_A
     lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_RIGHT]
@@ -393,13 +403,14 @@ dsp_scroll_right:
 ;;
 .scope
 dsp_autoscroll_on:
+    jsr dsp_wait_idle
+
     ;; set Shift bit in VAR_MODE
     lda VAR_MODE
     ora #PARAM_ENTRY_MODE_SHIFT
     sta VAR_MODE
 
     ;; call "Entry Mode" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
@@ -418,13 +429,14 @@ dsp_autoscroll_on:
 ;;
 .scope
 dsp_autoscroll_off:
+    jsr dsp_wait_idle
+
     ;; clear Shift bit in VAR_MODE
     lda VAR_MODE
     and #[$FF ^ PARAM_ENTRY_MODE_SHIFT]
     sta VAR_MODE
 
     ;; call "Entry Mode" function
-    jsr dsp_wait_idle
     ldx #CTRL_E
     stx IO_A
     sta IO_B
