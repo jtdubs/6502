@@ -79,6 +79,15 @@ _loop:
     beq _loop
     sta VAR_BUTTON_STATE
 
+    ;; wait 10ms
+    lda #10
+    jsr delay_ms
+
+    ;; re-sample and 'or' with previous result to de-bounce
+    lda VAR_BUTTON_STATE
+    ora IO_A
+    tax
+
     ;; call button events
     and #BTN_UP
     beq _on_up
