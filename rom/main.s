@@ -1,3 +1,9 @@
+;;
+;; main.s - Main entry point for 6502 code
+;;
+
+
+;;
 ;; Memory Map:
 ;; 0000 - 0001:    RAM - Zero Page - VAR_MESSAGE_PTR
 ;; 0002 - 0003:    RAM - Zero Page - VAR_RAM_PTR
@@ -10,6 +16,7 @@
 ;; 6000 - 600f:    Peripheral Controller Registers
 ;; 6010 - 7fff:    NOT MAPPED
 ;; 8000 - ffff:    ROM
+;;
 
 
 ;;
