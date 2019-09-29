@@ -144,10 +144,10 @@ messages:
     .word message4
     .word 0
 
-message1: .byte "Hello, world!",0
-message2: .byte "Goodbye, world!",0
-message3: .byte "OMG WTF BBQ",0
-message4: .byte ".............",0
+message1: .byte "Justin Dubs",0
+message2: .byte "Leslie Dubs",0
+message3: .byte "Anya Dubs",0
+message4: .byte "Miles Dubs",0
 
 
 ;;
