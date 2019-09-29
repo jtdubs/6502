@@ -1,5 +1,3 @@
-// pin 47 (PL2) didn't check out...
-
 #define ADDR_LOW_OUT PORTA
 #define ADDR_LOW_DIR DDRA
 #define ADDR_LOW_IN  PINA
