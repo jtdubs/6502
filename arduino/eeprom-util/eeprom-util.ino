@@ -81,7 +81,7 @@ bool eeprom_write(word addr, byte data) {
     DATA_DIR  = DIR_OUT;
 
     eeprom_write_ll(addr, data);
-    
+
     // read mode
     DATA_DIR = DIR_IN;
     CTRL_OUT &= ~OE_BIT;
@@ -108,7 +108,7 @@ void eeprom_unlock() {
     eeprom_write_ll(0x5555, 0xAA);
     eeprom_write_ll(0x2AAA, 0x55);
     eeprom_write_ll(0x5555, 0x20);
-    
+
     // read mode
     DATA_DIR = DIR_IN;
     CTRL_OUT &= ~OE_BIT;
@@ -122,7 +122,7 @@ void eeprom_lock() {
     eeprom_write_ll(0x5555, 0xAA);
     eeprom_write_ll(0x2AAA, 0x55);
     eeprom_write_ll(0x5555, 0xA0);
-    
+
     // read mode
     DATA_DIR = DIR_IN;
     CTRL_OUT &= ~OE_BIT;
@@ -174,9 +174,9 @@ void eeprom_dump(word base, word bytes) {
     // read mode
     DATA_DIR = DIR_IN;
     CTRL_OUT &= ~OE_BIT;
-    
+
     word last = base + bytes;
-    
+
     for (; base < last; base += 0x10) {
         byte data[0x10];
         for (int offset = 0; offset < 0x10; offset++) {
@@ -227,7 +227,7 @@ void loop() {
     char buffer[160] = { 0 };
     word addr = 0, len = 0;
     byte data = 0, page[64] = { 0 };
-    
+
     Serial.print("> ");
     int line_len = serial_readline(buffer, 160);
 

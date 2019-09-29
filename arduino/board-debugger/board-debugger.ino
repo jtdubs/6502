@@ -33,7 +33,7 @@ void board_setup() {
 
     digitalWrite(RESET_PIN, HIGH);
     pinMode(RESET_PIN, OUTPUT);
-  
+
     pinMode(RW_PIN,     INPUT);
     pinMode(RAM_CS_PIN, INPUT);
     pinMode(ROM_CS_PIN, INPUT);
