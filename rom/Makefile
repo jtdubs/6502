@@ -2,11 +2,8 @@
 
 all: out/rom.bin
 
-out/mem.bin: *.s
-	ophis -c -v -o out/mem.bin -m out/rom.map -l out/rom.lst main.s
-
-out/rom.bin: out/mem.bin
-	xxd -o-0x8000 out/mem.bin | tail -2048 | xxd -r > out/rom.bin
+out/rom.bin: *.s
+	ophis -c -v -o out/rom.bin -m out/rom.map -l out/rom.lst main.s
 
 out/rom.hex: out/rom.bin
 	xxd -c 64 -g 0 out/rom.bin | cut -c5-138 | grep -Ev 'f{128}' > out/rom.hex

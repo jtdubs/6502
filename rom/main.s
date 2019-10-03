@@ -15,17 +15,9 @@
 .data
 .org $0200
 
-;; read-only data
-.text ro
-.org $f000
-
 ;; code segment
 .text
 .org $8000
-
-;; vector table
-.text vec
-.org $fff0
 
 
 ;;
@@ -33,9 +25,6 @@
 ;;
 
 
-.require "util.s"
-.require "periph.s"
-.require "display.s"
 .require "entry.s"
 
 
@@ -43,7 +32,8 @@
 ;; Vector Table
 ;;
 
-.text vec
+.text
+.advance $fff4, $ff
 .word $0000 ; cop
 .word $0000 ; --
 .word $0000 ; abort
@@ -62,11 +52,5 @@
 .data
 .checkpc $4000
 
-.data ro
-.checkpc $fff0
-
 .text
-.checkpc $f000
-
-.text vec
 .checkpc $10000

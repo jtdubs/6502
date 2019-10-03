@@ -2,6 +2,10 @@
 ;; entry.s - Main entry point for 6502 code
 ;;
 
+.require "util.s"
+.require "periph.s"
+.require "display.s"
+
 
 ;;
 ;; Buttons
@@ -21,7 +25,7 @@
 .space VAR_MESSAGE_IDX  1
 .space VAR_BUTTON_STATE 1
 
-.text ro
+.text
 messages:
     .word message1
     .word message2
