@@ -2,9 +2,11 @@
 ;; entry.s - Main entry point for 6502 code
 ;;
 
-.require "util.s"
-.require "periph.s"
+.require "ram.s"
+.require "rng.s"
+.require "delay.s"
 .require "display.s"
+.require "peripheral.s"
 
 
 ;;
