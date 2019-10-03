@@ -36,6 +36,7 @@
 ;; Registers Used: A
 ;;
 .scope
+.text
 per_init:
     ;; set display control pins to outputs
     lda #IO_A_DSP_MASK

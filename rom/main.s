@@ -1,174 +1,72 @@
 ;;
-;; main.s - Main entry point for 6502 code
+;; main.s - defines the memory map and pulls in the code and data
 ;;
 
 
 ;;
-;; Memory Map:
-;; 0000 - 0001:    RAM - Zero Page - VAR_MESSAGE_PTR
-;; 0002 - 0003:    RAM - Zero Page - VAR_RAM_PTR
-;; 0004 - 0005:    RAM - Zero Page - VAR_RAND_SEED
-;; 0004 - 00ff:    RAM - Zero Page - FREE
-;; 0100 - 01ff:    RAM - Stack
-;; 0200 - 0202:    RAM - Display Variables
-;; 0203 - 0204:    RAM - Main Variables
-;; 0205 - 3fff:    RAM - FREE
-;; 4000 - 5fff:    NOT MAPPED
-;; 6000 - 600f:    Peripheral Controller Registers
-;; 6010 - 7fff:    NOT MAPPED
-;; 8000 - ffff:    ROM
+;; define memory map
 ;;
+
+;; zero page
+.data zp
+.org $0000
+
+;; general ram
+.data
+.org $0200
+
+;; read-only data
+.text ro
+.org $f000
+
+;; code segment
+.text
+.org $8000
+
+;; vector table
+.text vec
+.org $fff0
 
 
 ;;
-;; CODE SEGMENT starts at 0x8000 which is the beginnnig of the EEPROM
+;; Code
 ;;
 
-.advance $8000, $ff
 
 .require "util.s"
 .require "periph.s"
 .require "display.s"
-
-;;
-;; Variables
-;;
-.alias VAR_MESSAGE_IDX  $0203
-.alias VAR_BUTTON_STATE $0204
+.require "entry.s"
 
 
 ;;
-;; Buttons
+;; Vector Table
 ;;
-.alias BTN_TRIGGER  $01
-.alias BTN_UP       $02
-.alias BTN_DOWN     $04
-.alias BTN_LEFT     $08
-.alias BTN_RIGHT    $10
 
-
-;;
-;; on_reset: Main Entry Point
-;;
-.scope
-on_reset:
-    ;; initialize stack pointer
-    ldx #$ff
-    txs
-
-    ;; initialize hardware
-_hw_init:
-    jsr zero_ram
-    jsr per_init
-    jsr dsp_init
-    jsr rng_init
-
-    ;; initial message index and button state are 0
-    stz VAR_MESSAGE_IDX
-    stz VAR_BUTTON_STATE
-
-    ;; print message
-    lda VAR_MESSAGE_IDX
-    asl
-    tax
-    lda messages,x
-    sta VAR_MESSAGE_PTR
-    inx
-    lda messages,x
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print
-
-_loop:
-    ;; read the button state
-    ldx IO_A
-
-    ;; if button state hasn't changed, keep looping
-    txa
-    cmp VAR_BUTTON_STATE
-    beq _loop
-    sta VAR_BUTTON_STATE
-
-    ;; wait 10ms
-    lda #10
-    jsr delay_ms
-
-    ;; re-sample and 'or' with previous result to de-bounce
-    lda VAR_BUTTON_STATE
-    ora IO_A
-    tax
-
-    ;; call button events
-    and #BTN_UP
-    beq _on_up
-    txa
-    and #BTN_DOWN
-    beq _on_down
-    jmp _loop
-
-_on_up:
-    ;; on UP button, increment message index, up to 3
-    lda VAR_MESSAGE_IDX
-    cmp #03
-    beq _loop
-    inc
-    sta VAR_MESSAGE_IDX
-    jmp _refresh
-
-_on_down:
-    ;; on DOWN button, decrement message index, down to 0
-    lda VAR_MESSAGE_IDX
-    cmp #00
-    beq _loop
-    dec
-    sta VAR_MESSAGE_IDX
-    jmp _refresh
-
-_refresh:
-    ;; refresh the display based on new message index
-    asl
-    tax
-    lda messages,x
-    sta VAR_MESSAGE_PTR
-    inx
-    lda messages,x
-    sta [VAR_MESSAGE_PTR+1]
-
-    jsr dsp_clear
-    jsr dsp_print
-
-    jmp _loop
-.scend
+.text vec
+.word $0000 ; cop
+.word $0000 ; --
+.word $0000 ; abort
+.word $0000 ; nmi
+.word on_reset
+.word $0000 ; irq / brk
 
 
 ;;
-;; DATA SEGMENT starts at end of EEPROM
+;; verify no segments overruns
 ;;
 
-.advance $f000, $ff
+.data zp
+.checkpc $0100
 
-messages:
-    .word message1
-    .word message2
-    .word message3
-    .word message4
-    .word 0
+.data
+.checkpc $4000
 
-message1: .byte "Justin Dubs",0
-message2: .byte "Leslie Dubs",0
-message3: .byte "Anya Dubs",0
-message4: .byte "Miles Dubs",0
+.data ro
+.checkpc $fff0
 
+.text
+.checkpc $f000
 
-;;
-;; VECTOR TABLEs start at 0xFFF4, which is at the end of the EEPROM
-;;
-
-.advance $fff4, $ff
-
-vector_table:
-    .word $0000 ; cop
-    .word $0000 ; --
-    .word $0000 ; abort
-    .word $0000 ; nmi
-    .word on_reset
-    .word $0000 ; irq / brk
+.text vec
+.checkpc $10000

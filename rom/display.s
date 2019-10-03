@@ -20,26 +20,6 @@
 
 
 ;;
-;; Dependencies
-;;
-.require "periph.s"
-
-
-;;
-;; Zero Page Variables
-;;
-.alias VAR_MESSAGE_PTR  $00
-
-
-;;
-;; Local Variables
-;;
-.alias VAR_FUNCTION $0200
-.alias VAR_CONTROL  $0201
-.alias VAR_MODE     $0202
-
-
-;;
 ;; Display Control Lines
 ;;
 .alias CTRL_RS $20
@@ -87,6 +67,24 @@
 
 
 ;;
+;; Zero-page Variables
+;;
+
+.data zp
+.space VAR_MESSAGE_PTR 2
+
+
+;;
+;; RAM Data
+;;
+
+.data
+.space VAR_FUNCTION 1
+.space VAR_CONTROL  1
+.space VAR_MODE     1
+
+
+;;
 ;; dsp_init: Initialize the HD44780 Display Controller
 ;;
 ;; Parameters: None
@@ -94,6 +92,7 @@
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_init:
     ldx #CTRL_E
 
@@ -158,6 +157,7 @@ dsp_init:
 ;; Registers Used: A
 ;;
 .scope
+.text
 dsp_clear:
     jsr dsp_wait_idle
 
@@ -180,6 +180,7 @@ dsp_clear:
 ;; Registers Used: A
 ;;
 .scope
+.text
 dsp_home:
     jsr dsp_wait_idle
 
@@ -202,6 +203,7 @@ dsp_home:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_display_on:
     jsr dsp_wait_idle
 
@@ -228,6 +230,7 @@ dsp_display_on:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_display_off:
     jsr dsp_wait_idle
 
@@ -254,6 +257,7 @@ dsp_display_off:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_cursor_on:
     jsr dsp_wait_idle
 
@@ -280,6 +284,7 @@ dsp_cursor_on:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_cursor_off:
     jsr dsp_wait_idle
 
@@ -306,6 +311,7 @@ dsp_cursor_off:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_blink_on:
     jsr dsp_wait_idle
 
@@ -332,6 +338,7 @@ dsp_blink_on:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_blink_off:
     jsr dsp_wait_idle
 
@@ -358,6 +365,7 @@ dsp_blink_off:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_scroll_left:
     jsr dsp_wait_idle
 
@@ -380,6 +388,7 @@ dsp_scroll_left:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_scroll_right:
     jsr dsp_wait_idle
 
@@ -402,6 +411,7 @@ dsp_scroll_right:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_autoscroll_on:
     jsr dsp_wait_idle
 
@@ -428,6 +438,7 @@ dsp_autoscroll_on:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 dsp_autoscroll_off:
     jsr dsp_wait_idle
 
@@ -449,11 +460,10 @@ dsp_autoscroll_off:
 ;;
 ;; dsp_print: Print a message
 ;;
-;; Parameters: VAR_MESSAGE_PTR
-;;
 ;; Registers Used: A, Y
 ;;
 .scope
+.text
 dsp_print:
     jsr dsp_wait_idle
 
@@ -492,6 +502,7 @@ _end:
 ;; Registers Used: A
 ;;
 .scope
+.text
 dsp_wait_idle:
     ;; set port B to input
     lda #DIR_IN

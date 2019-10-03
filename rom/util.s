@@ -4,7 +4,7 @@
 ;; Functions:
 ;; - delay_us - Delay by multiple of 10us
 ;; - delay_ms - Delay by multiple of 1ms
-;; - zero_ram - Initialize ram
+;; - ram_init - Initialize ram
 ;; - rng_init - Initilize the random number generator
 ;; - rand     - Generate a random number
 ;;
@@ -13,8 +13,9 @@
 ;;
 ;; Zero Page Variables
 ;;
-.alias VAR_RAM_PTR   $02
-.alias VAR_RAND_SEED $04
+
+.data zp
+.space VAR_RAND_SEED 2
 
 
 ;;
@@ -26,6 +27,7 @@
 ;; Registers Used: A
 ;;
 .scope
+.text
 delay_us:
     ;; pad loop w/ dummy jmp + nop so each iteration takes 10us
     jmp _dummy      ;; 3 cycles
@@ -51,6 +53,7 @@ _cleanup:
 ;; Registers Used: A, X
 ;;
 .scope
+.text
 delay_ms:
     ldx #198        ;; 2 cycles
 _loop:
@@ -65,33 +68,36 @@ _target:
 
 
 ;;
-;; zero_ram: Zero out RAM (above the stack)
+;; ram_init: Zero out RAM (above the stack)
 ;;
 ;; Parameters: None
 ;;
 ;; Registers Used: A, Y
 ;;
 .scope
-zero_ram:
-    ;; VAR_RAM_PTR = $0200
+.data zp
+.space _RAM_PTR 2
+.text
+ram_init:
+    ;; _RAM_PTR = $0200
     lda #[<$0200]
-    sta VAR_RAM_PTR
+    sta _RAM_PTR
     lda #[>$0200]
-    sta [VAR_RAM_PTR+1]
+    sta [_RAM_PTR+1]
 _zero_page:
     ;; Start at page offset 0
     ldy #$00
     lda #$00
 _loop:
     ;; Zero the page
-    sta (VAR_RAM_PTR),y
+    sta (_RAM_PTR),y
     iny
     bne _loop
 _next_page:
     ;; Increment RAM_PTR
-    lda [VAR_RAM_PTR+1]
+    lda [_RAM_PTR+1]
     inc
-    sta [VAR_RAM_PTR+1]
+    sta [_RAM_PTR+1]
     ;; Loop until up to $4000
     cmp $40
     bne _zero_page
@@ -104,6 +110,7 @@ _next_page:
 ;; Registers used: A
 ;;
 .scope
+.text
 rng_init:
     lda #$A5
     sta [VAR_RAND_SEED+0]
@@ -125,6 +132,7 @@ rng_init:
 ;; Return Value: A
 ;;
 .scope
+.text
 rand:
     ldy #8
     lda [VAR_RAND_SEED+0]
