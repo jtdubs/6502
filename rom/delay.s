@@ -4,9 +4,6 @@
 ;; Functions:
 ;; - delay_us - Delay by multiple of 10us
 ;; - delay_ms - Delay by multiple of 1ms
-;; - ram_init - Initialize ram
-;; - rng_init - Initilize the random number generator
-;; - rand     - Generate a random number
 ;;
 
 
