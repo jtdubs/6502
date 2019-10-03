@@ -32,7 +32,7 @@
 
 
 ;;
-;; Variables
+;; Local Variables
 ;;
 .alias VAR_FUNCTION $0200
 .alias VAR_CONTROL  $0201

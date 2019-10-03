@@ -4,13 +4,17 @@
 ;; Functions:
 ;; - delay_us - Delay by multiple of 10us
 ;; - delay_ms - Delay by multiple of 1ms
+;; - zero_ram - Initialize ram
+;; - rng_init - Initilize the random number generator
+;; - rand     - Generate a random number
 ;;
 
 
 ;;
 ;; Zero Page Variables
 ;;
-.alias VAR_RAM_PTR  $02
+.alias VAR_RAM_PTR   $02
+.alias VAR_RAND_SEED $04
 
 
 ;;
@@ -69,21 +73,70 @@ _target:
 ;;
 .scope
 zero_ram:
+    ;; VAR_RAM_PTR = $0200
     lda #[<$0200]
     sta VAR_RAM_PTR
     lda #[>$0200]
     sta [VAR_RAM_PTR+1]
 _zero_page:
+    ;; Start at page offset 0
     ldy #$00
     lda #$00
 _loop:
+    ;; Zero the page
     sta (VAR_RAM_PTR),y
     iny
     bne _loop
 _next_page:
+    ;; Increment RAM_PTR
     lda [VAR_RAM_PTR+1]
     inc
     sta [VAR_RAM_PTR+1]
+    ;; Loop until up to $4000
     cmp $40
     bne _zero_page
+.scend
+
+
+;;
+;; rng_init: Initialize the Random Number generator
+;;
+;; Registers used: A
+;;
+.scope
+rng_init:
+    lda #$A5
+    sta [VAR_RAND_SEED+0]
+    lda #$96
+    sta [VAR_RAND_SEED+1]
+    rts
+.scend
+
+
+;;
+;; rand: Generate an 8-bit Random Number
+;;
+;; Reference: https://wiki.nesdev.com/w/index.php/Random_number_generator#Linear_feedback_shift_register
+;;
+;; Parameters: None
+;;
+;; Registers used: A, Y
+;;
+;; Return Value: A
+;;
+.scope
+rand:
+    ldy #8
+    lda [VAR_RAND_SEED+0]
+_loop:
+    asl
+    rol [VAR_RAND_SEED+1]
+    bcc _skip
+    eor #$39
+_skip:
+    dey
+    bne _loop
+    sta [VAR_RAND_SEED+0]
+    cmp #0
+    rts
 .scend

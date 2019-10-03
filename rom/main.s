@@ -7,6 +7,7 @@
 ;; Memory Map:
 ;; 0000 - 0001:    RAM - Zero Page - VAR_MESSAGE_PTR
 ;; 0002 - 0003:    RAM - Zero Page - VAR_RAM_PTR
+;; 0004 - 0005:    RAM - Zero Page - VAR_RAND_SEED
 ;; 0004 - 00ff:    RAM - Zero Page - FREE
 ;; 0100 - 01ff:    RAM - Stack
 ;; 0200 - 0202:    RAM - Display Variables
@@ -60,6 +61,7 @@ _hw_init:
     jsr zero_ram
     jsr per_init
     jsr dsp_init
+    jsr rng_init
 
     ;; initial message index and button state are 0
     stz VAR_MESSAGE_IDX
