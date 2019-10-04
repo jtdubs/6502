@@ -1,39 +1,21 @@
 ;;
 ;; entry.s - Main entry point for 6502 code
 ;;
+;; Functions:
+;; - on_reset - Initialize hardware and start the game
+;; - on_irq   - Handle Timer 1 interrupts and notify the game
+;;
 
 .require "ram.s"
-.require "rng.s"
-.require "delay.s"
 .require "display.s"
 .require "peripheral.s"
-
-
-;;
-;; Buttons
-;;
-.alias BTN_TRIGGER  $01
-.alias BTN_UP       $02
-.alias BTN_DOWN     $04
-.alias BTN_LEFT     $08
-.alias BTN_RIGHT    $10
+.require "game.s"
 
 
 ;;
 ;; on_reset: Main Entry Point
 ;;
 .scope
-.data zp
-.space VAR_ADVANCE 1
-
-.data zp
-.space VAR_LINE_1  17
-.space VAR_LINE_2  17
-
-.text
-intro1: .byte "  Trivial Game  ",0
-intro2: .byte " by Justin Dubs ",0
-
 .text
 on_reset:
     ;; disable interrupts until after init sequence
@@ -50,24 +32,6 @@ on_reset:
 
     ;; initialize variables
     stz VAR_IRQ_COUNTER
-    stz VAR_ADVANCE
-
-    ; initialize display buffers
-    lda #'a
-    ldy 16
-_clear_line_1:
-    dey
-    sta VAR_LINE_1,y
-    bne _clear_line_1
-    stz [VAR_LINE_1+16]
-
-    lda #'A
-    ldy 16
-_clear_line_2:
-    dey
-    sta VAR_LINE_2,y
-    bne _clear_line_2
-    stz [VAR_LINE_2+16]
 
     ;; set timer to fire every 50000 cycles (50ms)
     lda #[<50000]
@@ -83,62 +47,9 @@ _clear_line_2:
     lda #[IER_SET | IRQ_TIMER_1]
     sta REG_IER
 
-    ;; print intro message
-    lda #[<intro1]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>intro1]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_1
-
-    lda #[<intro2]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>intro2]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_2
-
-_enter_intro_loop:
-    ;; enable interrupts
-    cli
-
-_intro_loop:
-    ;; wait for 4 seconds (16 * 250ms)
-    lda VAR_ADVANCE
-    cmp #16
-    bcc _intro_loop
-
-_enter_game_loop:
-    ;; enable interrupts
-    cli
-
-_game_loop:
-    ;; wait for 250ms
-    lda VAR_ADVANCE
-    cmp #$01
-    bcc _game_loop
-
-    ;; disable interrupts
-    sei
-
-    ;; reset VAR_ADVANCE
-    stz VAR_ADVANCE
-
-    ;; blah
-    inc VAR_LINE_1
-
-    ;; re-paint display
-    lda #[<VAR_LINE_1]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>VAR_LINE_1]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_1
-
-    lda #[<VAR_LINE_2]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>VAR_LINE_2]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_2
-
-    jmp _enter_game_loop
+    ;; run the game
+    jsr game_init
+    jsr game_run
 .scend
 
 
@@ -170,10 +81,10 @@ _timer_1:
     inc VAR_IRQ_COUNTER
     lda VAR_IRQ_COUNTER
 
-    ;; if 250ms has elapsed, set VAR_ADVANCE and clear the IRQ_COUNTER
+    ;; if 250ms has elapsed, let the game do something and clear the IRQ_COUNTER
     cmp #5
     bcc _end
-    inc VAR_ADVANCE
+    .invoke game_interrupt
     stz VAR_IRQ_COUNTER
 
 _not_timer_1:
