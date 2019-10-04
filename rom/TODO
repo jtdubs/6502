@@ -1,3 +1,2 @@
 TODO:
-- Setup fixed display buffers and 'paint' them on interrupt
 - Create a text-based sprite that the arrow keys move around
