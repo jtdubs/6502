@@ -514,7 +514,7 @@ _end:
 dsp_print_2:
     jsr dsp_wait_idle
 
-    ;; set ddram address to 0 (start of line 1)
+    ;; set ddram address to $40 (start of line 2)
     lda #[FN_SET_DDRAM_ADDR | $40]
     ldx #CTRL_E
     stx REG_IOA
