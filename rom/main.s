@@ -11,9 +11,17 @@
 .data zp
 .org $0000
 
+;; stack
+.data stack
+.org $0100
+
 ;; general ram
 .data
 .org $0200
+
+;; peripheral controller
+.data pc
+.org $6000
 
 ;; code segment
 .text
@@ -48,8 +56,14 @@
 .data zp
 .checkpc $0100
 
+.data stack
+.checkpc $0200
+
 .data
 .checkpc $4000
+
+.data pc
+.checkpc $6010
 
 .text
 .checkpc $10000

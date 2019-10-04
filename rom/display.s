@@ -119,31 +119,31 @@ dsp_init:
 
     ;; call "Function Set"
     jsr dsp_wait_idle
-    stx IO_A
+    stx REG_IOA
     lda VAR_FUNCTION
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     ;; Call "Display Control"
     jsr dsp_wait_idle
-    stx IO_A
+    stx REG_IOA
     lda VAR_CONTROL
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     ;; Call "Entry mode Set"
     jsr dsp_wait_idle
-    stx IO_A
+    stx REG_IOA
     lda VAR_MODE
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     ;; Call "Clear display"
     jsr dsp_wait_idle
-    stx IO_A
+    stx REG_IOA
     lda #FN_CLEAR
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -163,10 +163,10 @@ dsp_clear:
 
     ;; Call "Clear"
     lda #CTRL_E
-    sta IO_A
+    sta REG_IOA
     lda #FN_CLEAR
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -186,10 +186,10 @@ dsp_home:
 
     ;; Call "Home"
     lda #CTRL_E
-    sta IO_A
+    sta REG_IOA
     lda #FN_HOME
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -214,9 +214,9 @@ dsp_display_on:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -241,9 +241,9 @@ dsp_display_off:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -268,9 +268,9 @@ dsp_cursor_on:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -295,9 +295,9 @@ dsp_cursor_off:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -322,9 +322,9 @@ dsp_blink_on:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -349,9 +349,9 @@ dsp_blink_off:
 
     ;; call "Display Control" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -371,10 +371,10 @@ dsp_scroll_left:
 
     ;; call "Shift" function
     ldx #CTRL_E
-    stx IO_A
+    stx REG_IOA
     lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_LEFT]
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -394,10 +394,10 @@ dsp_scroll_right:
 
     ;; call "Shift" function
     ldx #CTRL_E
-    stx IO_A
+    stx REG_IOA
     lda #[FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_RIGHT]
-    sta IO_B
-    stz IO_A
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -422,9 +422,9 @@ dsp_autoscroll_on:
 
     ;; call "Entry Mode" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -449,9 +449,9 @@ dsp_autoscroll_off:
 
     ;; call "Entry Mode" function
     ldx #CTRL_E
-    stx IO_A
-    sta IO_B
-    stz IO_A
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
 
     rts
 .scend
@@ -473,13 +473,13 @@ _loop:
     ;; load the character into IO B
     lda (VAR_MESSAGE_PTR),y
     beq _end
-    sta IO_B
+    sta REG_IOB
 
     ;; pulse E
     lda #[CTRL_RS | CTRL_E]
-    sta IO_A
+    sta REG_IOA
     lda #CTRL_RS
-    sta IO_A
+    sta REG_IOA
 
     ;; wait for character to write (40us)
     lda #2
@@ -506,21 +506,21 @@ _end:
 dsp_wait_idle:
     ;; set port B to input
     lda #DIR_IN
-    sta DDR_B
+    sta REG_DDRB
 
     ;; set flags for reading the instruction register
     lda #[CTRL_RW | CTRL_E]
-    sta IO_A
+    sta REG_IOA
 
 _loop:
     ;; read the instruction register and loop until not busy
-    lda IO_B
+    lda REG_IOB
     and #BUSY_FLAG
     bne _loop
 
 _cleanup:
     ;; set port B back to output
     lda #DIR_OUT
-    sta DDR_B
+    sta REG_DDRB
     rts
 .scend
