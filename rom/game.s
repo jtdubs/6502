@@ -38,8 +38,9 @@
 
 .data zp
 .space VAR_TICK         1   ;; counts 250ms ticks
-.space VAR_POS          1   ;; player position
 .space VAR_BUTTON_STATE 1   ;; button state
+.space VAR_POS          1   ;; player position
+.space VAR_LASER        1   ;; laser position
 
 .data
 .space VAR_BUFFER       128 ;; display buffer
@@ -48,6 +49,7 @@
 intro1: .byte "  Trivial Game  ",0
 intro2: .byte " by Justin Dubs ",0
 player: .byte "(>",0
+laser:  .byte "-",0
 
 
 ;;
@@ -58,8 +60,9 @@ player: .byte "(>",0
 game_init:
     ;; initialize variables
     stz VAR_TICK
-    stz VAR_POS
     stz VAR_BUTTON_STATE
+    stz VAR_POS
+    stz VAR_LASER
     jsr game_redraw
 .scend
 
@@ -157,6 +160,8 @@ game_on_tick:
     ;; reset VAR_TICK
     stz VAR_TICK
 
+    jsr game_update_laser
+
     ;; re-paint display
     lda #[<VAR_BUFFER]
     sta [VAR_MESSAGE_PTR+0]
@@ -170,6 +175,29 @@ game_on_tick:
     sta [VAR_MESSAGE_PTR+1]
     jsr dsp_print_2
 
+    rts
+.scend
+
+
+;;
+;; game_update_laser - Update laser position and redraw if needed
+;;
+.scope
+.text
+game_update_laser:
+    lda VAR_LASER
+    beq _end
+    inc
+    sta VAR_LASER
+    and $BF
+    cmp #15
+    bmi _redraw
+    stz VAR_LASER
+
+_redraw:
+    jsr game_redraw
+
+_end:
     rts
 .scend
 
@@ -254,6 +282,14 @@ _end:
 .scope
 .text
 game_on_trigger:
+    lda VAR_LASER
+    bne _end
+    lda VAR_POS
+    inc
+    sta VAR_LASER
+
+    jsr game_redraw
+_end:
     rts
 .scend
 
@@ -325,8 +361,14 @@ _clear_line_2:
     lda [player+1]
     sta VAR_BUFFER,y
 
-    cli
+    ;; draw laser
+    ldy VAR_LASER
+    beq _end
+    lda laser
+    sta VAR_BUFFER,y
 
+_end:
+    cli
     rts
 .scend
 
