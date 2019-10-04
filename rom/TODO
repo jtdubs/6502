@@ -1,4 +1,3 @@
 TODO:
-- Ability to print to either line of the display
 - Setup fixed display buffers and 'paint' them on interrupt
 - Create a text-based sprite that the arrow keys move around

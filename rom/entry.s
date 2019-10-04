@@ -64,7 +64,7 @@ on_reset:
     inx
     lda messages,x
     sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print
+    jsr dsp_print_1
 
     ;; set timer 1 to continuous, free-run mode
     lda #$40
@@ -111,7 +111,7 @@ _loop:
     sta [VAR_MESSAGE_PTR+1]
 
     jsr dsp_home
-    jsr dsp_print
+    jsr dsp_print_2
 
     jmp _enter_loop
 .scend
