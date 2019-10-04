@@ -46,7 +46,7 @@
 .word $0000 ; abort
 .word $0000 ; nmi
 .word on_reset
-.word $0000 ; irq / brk
+.word on_irq
 
 
 ;;

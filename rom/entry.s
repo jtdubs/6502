@@ -25,7 +25,7 @@
 .scope
 .data ram
 .space VAR_MESSAGE_IDX  1
-.space VAR_BUTTON_STATE 1
+.space VAR_ADVANCE      1
 
 .text
 messages:
@@ -34,10 +34,10 @@ messages:
     .word message3
     .word message4
     .word 0
-message1: .byte "Justin Dubs",0
-message2: .byte "Leslie Dubs",0
-message3: .byte "Anya Dubs",0
-message4: .byte "Miles Dubs",0
+message1: .byte "Justin Dubs     ",0
+message2: .byte "Leslie Dubs     ",0
+message3: .byte "Anya Dubs       ",0
+message4: .byte "Miles Dubs      ",0
 
 .text
 on_reset:
@@ -46,14 +46,14 @@ on_reset:
     txs
 
     ;; initialize hardware
-    jsr ram_init
     jsr per_init
     jsr dsp_init
     jsr rng_init
 
-    ;; initial message index and button state are 0
+    ;; initialize variables
+    stz VAR_IRQ_COUNTER
     stz VAR_MESSAGE_IDX
-    stz VAR_BUTTON_STATE
+    stz VAR_ADVANCE
 
     ;; print message
     lda VAR_MESSAGE_IDX
@@ -66,53 +66,42 @@ on_reset:
     sta [VAR_MESSAGE_PTR+1]
     jsr dsp_print
 
+    ;; set timer 1 to continuous, free-run mode
+    lda #$40
+    sta REG_ACR
+
+    ;; enable timer 1 interrupt
+    lda #[IER_SET | IRQ_TIMER_1]
+    sta REG_IER
+
+    ;; set timer to fire every 50000 cycles (50ms)
+    lda #[<50000]
+    sta REG_T1C_L
+    lda #[>50000]
+    sta REG_T1C_H
+
+    ;; enable interrupts
+_enter_loop:
+    cli
+
 _loop:
-    ;; read the button state
-    ldx IO_A
-
-    ;; if button state hasn't changed, keep looping
-    txa
-    cmp VAR_BUTTON_STATE
+    ;; spin until VAR_ADVANCE is set
+    lda VAR_ADVANCE
     beq _loop
-    sta VAR_BUTTON_STATE
 
-    ;; wait 10ms
-    lda #10
-    jsr delay_ms
+    ;; disable interrupts
+    sei
 
-    ;; re-sample and 'or' with previous result to de-bounce
-    lda VAR_BUTTON_STATE
-    ora IO_A
-    tax
+    ;; reset VAR_ADVANCE
+    stz VAR_ADVANCE
 
-    ;; call button events
-    and #BTN_UP
-    beq _on_up
-    txa
-    and #BTN_DOWN
-    beq _on_down
-    jmp _loop
-
-_on_up:
-    ;; on UP button, increment message index, up to 3
+    ;; go to next message
     lda VAR_MESSAGE_IDX
-    cmp #03
-    beq _loop
     inc
+    and #$03
     sta VAR_MESSAGE_IDX
-    jmp _refresh
 
-_on_down:
-    ;; on DOWN button, decrement message index, down to 0
-    lda VAR_MESSAGE_IDX
-    cmp #00
-    beq _loop
-    dec
-    sta VAR_MESSAGE_IDX
-    jmp _refresh
-
-_refresh:
-    ;; refresh the display based on new message index
+    ;; refresh the display
     asl
     tax
     lda messages,x
@@ -121,8 +110,41 @@ _refresh:
     lda messages,x
     sta [VAR_MESSAGE_PTR+1]
 
-    jsr dsp_clear
+    jsr dsp_home
     jsr dsp_print
 
-    jmp _loop
+    jmp _enter_loop
+.scend
+
+
+;;
+;; on_irq
+;;
+.scope
+.data ram
+.space VAR_IRQ_COUNTER  1
+
+.text
+on_irq:
+    ;; save accum value
+    pha
+
+    ;; clear the interrupt
+    lda #$ff
+    sta REG_IFR
+
+    ;; increment the counter
+    inc VAR_IRQ_COUNTER
+    lda VAR_IRQ_COUNTER
+
+    ;; if 1s has elapsed, set VAR_ADVANCE and clear the IRQ_COUNTER
+    cmp #20
+    bne _end
+    inc VAR_ADVANCE
+    stz VAR_IRQ_COUNTER
+
+_end:
+    ;; restore accum value and return
+    pla
+    rti
 .scend
