@@ -43,8 +43,8 @@
 ;; Game Data
 ;;
 
-.alias _NLASER   3
-.alias _NENEMIES 4
+.alias _N_LASERS  3
+.alias _N_ENEMIES 4
 
 .data
 .space VAR_TICK           1   ;; counts 250ms ticks
@@ -78,7 +78,7 @@ game_init:
 
     ;; zero out laser array
     lda #$00
-    ldy _NLASER
+    ldy _N_LASERS
 _laser_loop:
     dey
     sta _VAR_LASERS,y
@@ -86,7 +86,7 @@ _laser_loop:
 
     ;; ff out enemy array
     lda #$FF
-    ldy _NENEMIES
+    ldy _N_ENEMIES
 _enemy_loop:
     dey
     sta _VAR_ENEMIES,y
@@ -252,7 +252,7 @@ _on_trigger:
 _game_spawn_enemies:
 .scope
     ;; find a blank spot in Y, or jump to end
-    ldy #_NENEMIES
+    ldy #_N_ENEMIES
 _loop:
     dey
     bmi _end
@@ -288,7 +288,7 @@ _end:
 .text
 _game_update_enemies:
 .scope
-    ldy #_NENEMIES
+    ldy #_N_ENEMIES
 _loop:
     dey
     bmi _end
@@ -313,7 +313,7 @@ _end:
 .text
 _game_update_lasers:
 .scope
-    ldy #_NLASER
+    ldy #_N_LASERS
 _loop:
     dey
     bmi _end
@@ -401,7 +401,7 @@ _end:
 .text
 _game_on_trigger:
 .scope
-    ldy #_NLASER
+    ldy #_N_LASERS
 _loop:
     dey
     bmi _end
@@ -476,7 +476,7 @@ _clear:
 
     ;; draw enemies
     lda enemy
-    ldy #_NENEMIES
+    ldy #_N_ENEMIES
 _enemy_loop:
     dey
     bmi _enemy_done
@@ -489,7 +489,7 @@ _enemy_done:
 
     ;; draw lasers
     lda laser
-    ldy #_NLASER
+    ldy #_N_LASERS
 _laser_loop:
     dey
     bmi _laser_done
