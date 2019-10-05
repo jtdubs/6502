@@ -2,18 +2,21 @@
 ;; game.s - Game code
 ;;
 ;; Functions:
-;; - game_init       - Initialize the game
-;; - game_run        - Run the game
-;; - game_intro      - Show the intro screen
-;; - game_loop       - The main loop
-;; - game_interrupt  - Macro to handle 250ms ticks
-;; - game_redraw     - Redraw the display buffer
-;; - game_on_tick    - Handle 250ms tick
-;; - game_on_up      - Handle up button
-;; - game_on_down    - Handle down button
-;; - game_on_left    - Handle left button
-;; - game_on_right   - Handle right button
-;; - game_on_trigger - Handle trigger button
+;; - game_init           - Initialize the game
+;; - game_run            - Run the game
+;; - game_intro          - Show the intro screen
+;; - game_loop           - The main loop
+;; - game_interrupt      - Macro to handle 250ms ticks
+;; - game_spawn_enemies  - Spawn random enemies
+;; - game_update_enemies - Update enemy positions
+;; - game_update_lasers  - Update laser positions
+;; - game_redraw         - Redraw the display buffer
+;; - game_on_tick        - Handle 250ms tick
+;; - game_on_up          - Handle up button
+;; - game_on_down        - Handle down button
+;; - game_on_left        - Handle left button
+;; - game_on_right       - Handle right button
+;; - game_on_trigger     - Handle trigger button
 ;;
 
 .require "rng.s"
