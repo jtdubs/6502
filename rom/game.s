@@ -51,6 +51,7 @@
 .space _VAR_POS           1   ;; player position
 .space _VAR_LASERS        3   ;; laser positions
 .space _VAR_ENEMIES       4   ;; enemy positions
+.space _VAR_EXPLOSIONS    4   ;; explosion positions
 .space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
 .space _VAR_BUFFER        128 ;; display buffer
 .space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
@@ -59,9 +60,10 @@
 intro1: .byte " Squid Defender "
 intro2: .byte "     10000      "
 
-sprite_player: .byte $D6,$DB
-sprite_laser:  .byte $A5
-sprite_enemy:  .byte $F4
+sprite_player:    .byte $D6,$DB
+sprite_laser:     .byte $A5
+sprite_enemy:     .byte $F4
+sprite_explosion: .byte $2A
 
 
 ;;
@@ -87,12 +89,13 @@ _laser_loop:
     sta _VAR_LASERS,y
     bne _laser_loop
 
-    ;; ff out enemy array
+    ;; ff out enemy and explosion array
     lda #$FF
     ldy _N_ENEMIES
 _enemy_loop:
     dey
     sta _VAR_ENEMIES,y
+    sta _VAR_EXPLOSIONS,y
     bne _enemy_loop
 
     ;; fill the display buffer w/ the initial game state
@@ -152,6 +155,7 @@ _on_tick:
     jsr _game_handle_input
     jsr _game_spawn_enemies
     jsr _game_update_lasers
+    jsr _game_update_explosions
     jsr _game_update_enemies
     jsr _game_redraw
     jsr dsp_blit
@@ -339,14 +343,62 @@ _loop:
     cmp _VAR_ENEMY_POS
     bne _loop
 
-    ;; get rid of laser, and return true
+    ;; get rid of laser
     lda #$00
     sta _VAR_LASERS,y
+
+    ;; create explosion
+    jsr _game_explosion
+
+    ;; return true
     lda #$01
     rts
 
 _end:
     lda #$00
+    rts
+.scend
+
+
+;;
+;; _game_explosion - create an explosion at _VAR_ENEMY_POS
+;;
+.text
+_game_explosion:
+.scope
+    ;; for each explosion
+    ldy #_N_ENEMIES
+_loop:
+    dey
+    bmi _end
+
+    ;; if explosion is non-FF, it already exists
+    lda _VAR_EXPLOSIONS,y
+    cmp #$FF
+    bne _loop
+
+    ;; create an explosion
+    lda _VAR_ENEMY_POS
+    sta _VAR_EXPLOSIONS,y
+
+_end:
+    rts
+.scend
+
+
+;;
+;; _game_update_explosions - Update explosions
+;;
+.text
+_game_update_explosions:
+.scope
+    ;; clear explosion array
+    lda #$FF
+    ldy _N_ENEMIES
+_loop:
+    dey
+    sta _VAR_EXPLOSIONS,y
+    bne _loop
     rts
 .scend
 
@@ -558,6 +610,19 @@ _laser_loop:
     sta _VAR_BUFFER,x
     jmp _laser_loop
 _laser_done:
+
+    ;; draw explosions
+    lda sprite_explosion
+    ldy #_N_ENEMIES
+_explosion_loop:
+    dey
+    bmi _explosion_done
+    ldx _VAR_EXPLOSIONS,y
+    cpx #$FF
+    beq _explosion_loop
+    sta _VAR_BUFFER,x
+    jmp _explosion_loop
+_explosion_done:
 
     cli
     rts
