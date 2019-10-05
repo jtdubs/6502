@@ -15,8 +15,9 @@
 ;; - dsp_scroll_right   - Scroll right
 ;; - dsp_autoscroll_on  - Turn autoscroll on
 ;; - dsp_autoscroll_off - Turn autoscroll off
-;; - dsp_print_1        - Print a message (1st line)
-;; - dsp_print_2        - Print a message (2nd line)
+;; - dsp_print_1        - Print a message to the 1st line
+;; - dsp_print_2        - Print a message to the 2nd line
+;; - dsp_blit           - Blit a buffer to the display
 ;;
 
 
@@ -544,6 +545,87 @@ _loop:
     ;; advance to next character
     iny
     jmp _loop
+
+_end:
+    rts
+.scend
+
+
+;;
+;; dsp_blit: Blit a buffer to the display
+;;
+;; Registers Used: A, Y
+;;
+.scope
+.text
+dsp_blit:
+_setup_1:
+    jsr dsp_wait_idle
+
+    ;; set ddram address to 0 (start of line 1)
+    lda #[FN_SET_DDRAM_ADDR | $00]
+    ldx #CTRL_E
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
+
+    jsr dsp_wait_idle
+
+    ldy #$00 ;; Y is array index
+
+_loop_1:
+    ;; load the character into IO B
+    lda (VAR_MESSAGE_PTR),y
+    sta REG_IOB
+
+    ;; pulse E
+    lda #[CTRL_RS | CTRL_E]
+    sta REG_IOA
+    lda #CTRL_RS
+    sta REG_IOA
+
+    ;; wait for character to write (40us)
+    lda #2
+    jsr delay_us
+
+    ;; advance to next character
+    iny
+    cpy #$10
+    bmi _loop_1
+
+_setup_2:
+    jsr dsp_wait_idle
+
+    ;; set ddram address to $40 (start of line 2)
+    lda #[FN_SET_DDRAM_ADDR | $40]
+    ldx #CTRL_E
+    stx REG_IOA
+    sta REG_IOB
+    stz REG_IOA
+
+    jsr dsp_wait_idle
+
+    ldy #$40 ;; Y is array index
+
+_loop_2:
+    ;; load the character into IO B
+    lda (VAR_MESSAGE_PTR),y
+    sta REG_IOB
+
+    ;; pulse E
+    lda #[CTRL_RS | CTRL_E]
+    sta REG_IOA
+    lda #CTRL_RS
+    sta REG_IOA
+
+    ;; wait for character to write (40us)
+    lda #2
+    jsr delay_us
+
+    ;; advance to next character
+    iny
+    cpy #$50
+    bmi _loop_2
 
 _end:
     rts

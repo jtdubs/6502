@@ -46,8 +46,8 @@
 .space VAR_BUFFER       128 ;; display buffer
 
 .text
-intro1: .byte " Squid Defender ",0
-intro2: .byte "     10000      ",0
+intro1: .byte " Squid Defender "
+intro2: .byte "     10000      "
 player: .byte $D6,$DB,0
 laser:  .byte $A5,0
 enemy:  .byte $3C,$BA,$7F,0
@@ -79,6 +79,12 @@ game_run:
 
     ;; enable interrupts
     cli
+
+    ;; from now on we draw from VAR_BUFFER
+    lda #[<VAR_BUFFER]
+    sta [VAR_MESSAGE_PTR+0]
+    lda #[>VAR_BUFFER]
+    sta [VAR_MESSAGE_PTR+1]
 
     ;; enter game loop
     jsr game_loop
@@ -163,17 +169,7 @@ game_on_tick:
     jsr game_update_laser
 
     ;; re-paint display
-    lda #[<VAR_BUFFER]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>VAR_BUFFER]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_1
-
-    lda #[<[VAR_BUFFER+$40]]
-    sta [VAR_MESSAGE_PTR+0]
-    lda #[>[VAR_BUFFER+$40]]
-    sta [VAR_MESSAGE_PTR+1]
-    jsr dsp_print_2
+    jsr dsp_blit
 
     rts
 .scend
