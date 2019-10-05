@@ -46,10 +46,11 @@
 .space VAR_BUFFER       128 ;; display buffer
 
 .text
-intro1: .byte "  Trivial Game  ",0
-intro2: .byte " by Justin Dubs ",0
-player: .byte "(>",0
-laser:  .byte "-",0
+intro1: .byte " Squid Defender ",0
+intro2: .byte "     10000      ",0
+player: .byte $D6,$DB,0
+laser:  .byte $A5,0
+enemy:  .byte $3C,$BA,$7F,0
 
 
 ;;
@@ -357,6 +358,17 @@ _clear_line_2:
     sta VAR_BUFFER,y
     iny
     lda [player+1]
+    sta VAR_BUFFER,y
+
+    ;; draw enemy
+    ldy #12
+    lda [enemy]
+    sta VAR_BUFFER,y
+    iny
+    lda [enemy+1]
+    sta VAR_BUFFER,y
+    iny
+    lda [enemy+2]
     sta VAR_BUFFER,y
 
     ;; draw laser
