@@ -36,13 +36,14 @@
 ;; Game Data
 ;;
 
-.alias NLASER 3
-
+.alias NLASER   3
+.alias NENEMIES 4
 .data zp
 .space VAR_TICK         1 ;; counts 250ms ticks
 .space VAR_BUTTON_STATE 1 ;; button state
 .space VAR_POS          1 ;; player position
 .space VAR_LASERS       3 ;; laser positions
+.space VAR_ENEMIES      4 ;; enemy positions
 
 .data
 .space VAR_BUFFER       128 ;; display buffer
@@ -50,9 +51,9 @@
 .text
 intro1: .byte " Squid Defender "
 intro2: .byte "     10000      "
-player: .byte $D6,$DB,0
-laser:  .byte $A5,0
-enemy:  .byte $3C,$BA,$7F,0
+player: .byte $D6,$DB
+laser:  .byte $A5
+enemy:  .byte $F4
 
 
 ;;
@@ -75,7 +76,19 @@ _laser_loop:
     jmp _laser_loop
 _laser_done:
 
+    ;; ff out enemy array
+    lda #$FF
+    ldy #NENEMIES
+_enemy_loop:
+    dey
+    bmi _enemy_done
+    sta VAR_ENEMIES,y
+    jmp _enemy_loop
+_enemy_done:
+
     jsr game_redraw
+
+    rts
 .scend
 
 
@@ -99,6 +112,8 @@ game_run:
 
     ;; enter game loop
     jsr game_loop
+
+    rts
 .scend
 
 
@@ -177,10 +192,64 @@ game_on_tick:
     ;; reset VAR_TICK
     stz VAR_TICK
 
+    jsr game_spawn_enemies
     jsr game_update_lasers
+    jsr game_update_enemies
     jsr game_redraw
     jsr dsp_blit
 
+    rts
+.scend
+
+
+;;
+;; game_spawn_enemies - Spawn random enemies
+;;
+.scope
+.text
+game_spawn_enemies:
+    ldy #NENEMIES
+_loop:
+    dey
+    bmi _end
+    lda VAR_ENEMIES,y
+    cmp #$FF
+    bne _loop
+    phy
+    jsr rand
+    ply
+    cmp #$A0
+    bmi _end
+    and #$40
+    clc
+    adc #$10
+    sta VAR_ENEMIES,y
+_end:
+    rts
+.scend
+
+
+;;
+;; game_update_enemies - Update enemy positions
+;;
+.scope
+.text
+game_update_enemies:
+    ldy #NENEMIES
+_loop:
+    dey
+    bmi _end
+    lda VAR_ENEMIES,y
+    cmp #$FF
+    beq _loop
+    dec
+    sta VAR_ENEMIES,y
+    cmp #$3F
+    bne _loop
+    lda #$FF
+    sta VAR_ENEMIES,y
+    jmp _loop
+_end:
     rts
 .scend
 
@@ -362,16 +431,18 @@ _clear_line_2:
     lda [player+1]
     sta VAR_BUFFER,y
 
-    ;; draw enemy
-    ldy #12
-    lda [enemy]
-    sta VAR_BUFFER,y
-    iny
-    lda [enemy+1]
-    sta VAR_BUFFER,y
-    iny
-    lda [enemy+2]
-    sta VAR_BUFFER,y
+    ;; draw enemies
+    lda enemy
+    ldy #NENEMIES
+_enemy_loop:
+    dey
+    bmi _enemy_done
+    ldx VAR_ENEMIES,y
+    cpx #$FF
+    beq _enemy_loop
+    sta VAR_BUFFER,x
+    jmp _enemy_loop
+_enemy_done:
 
     ;; draw lasers
     lda laser

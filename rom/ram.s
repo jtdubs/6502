@@ -40,4 +40,5 @@ _next_page:
     ;; Loop until up to $4000
     cmp #$40
     bne _zero_page
+    rts
 .scend
