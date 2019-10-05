@@ -1,7 +1,7 @@
 ;;
 ;; display.s - Driver for the Hitachi HD44780U display controller
 ;;
-;; Functions:
+;; Exported Functions:
 ;; - dsp_init           - Initialize the display
 ;; - dsp_clear          - Clear the display
 ;; - dsp_home           - Move cursor to home
@@ -18,7 +18,9 @@
 ;; - dsp_print_1        - Print a message to the 1st line
 ;; - dsp_print_2        - Print a message to the 2nd line
 ;; - dsp_blit           - Blit a buffer to the display
-;; - dsp_wait_idle      - Wait for display idle
+;;
+;; Local Functions:
+;; - _dsp_wait_idle     - Wait for display idle
 ;;
 .scope
 
@@ -122,28 +124,28 @@ dsp_init:
     ;;
 
     ;; call "Function Set"
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
     stx REG_IOA
     lda _VAR_FUNCTION
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Display Control"
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
     stx REG_IOA
     lda _VAR_CONTROL
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Entry mode Set"
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
     stx REG_IOA
     lda _VAR_MODE
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Clear display"
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
     stx REG_IOA
     lda #_FN_CLEAR
     sta REG_IOB
@@ -163,7 +165,7 @@ dsp_init:
 .scope
 .text
 dsp_clear:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; Call "Clear"
     lda #_E
@@ -186,7 +188,7 @@ dsp_clear:
 .scope
 .text
 dsp_home:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; Call "Home"
     lda #_E
@@ -209,7 +211,7 @@ dsp_home:
 .scope
 .text
 dsp_display_on:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set Display bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -236,7 +238,7 @@ dsp_display_on:
 .scope
 .text
 dsp_display_off:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; clear Display bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -263,7 +265,7 @@ dsp_display_off:
 .scope
 .text
 dsp_cursor_on:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set Cursor bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -290,7 +292,7 @@ dsp_cursor_on:
 .scope
 .text
 dsp_cursor_off:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; clear Cursor bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -317,7 +319,7 @@ dsp_cursor_off:
 .scope
 .text
 dsp_blink_on:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set Blink bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -344,7 +346,7 @@ dsp_blink_on:
 .scope
 .text
 dsp_blink_off:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; clear Cursor bit in VAR_DSP_CONTROL
     lda _VAR_CONTROL
@@ -371,7 +373,7 @@ dsp_blink_off:
 .scope
 .text
 dsp_scroll_left:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; call "Shift" function
     ldx #_E
@@ -394,7 +396,7 @@ dsp_scroll_left:
 .scope
 .text
 dsp_scroll_right:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; call "Shift" function
     ldx #_E
@@ -417,7 +419,7 @@ dsp_scroll_right:
 .scope
 .text
 dsp_autoscroll_on:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set Shift bit in VAR_DSP_MODE
     lda _VAR_MODE
@@ -444,7 +446,7 @@ dsp_autoscroll_on:
 .scope
 .text
 dsp_autoscroll_off:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; clear Shift bit in VAR_DSP_MODE
     lda _VAR_MODE
@@ -469,7 +471,7 @@ dsp_autoscroll_off:
 .scope
 .text
 dsp_print_1:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set ddram address to 0 (start of line 1)
     lda #[_FN_SET_DDRAM_ADDR | $00]
@@ -478,7 +480,7 @@ dsp_print_1:
     sta REG_IOB
     stz REG_IOA
 
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -515,7 +517,7 @@ _end:
 .scope
 .text
 dsp_print_2:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set ddram address to $40 (start of line 2)
     lda #[_FN_SET_DDRAM_ADDR | $40]
@@ -524,7 +526,7 @@ dsp_print_2:
     sta REG_IOB
     stz REG_IOA
 
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -562,7 +564,7 @@ _end:
 .text
 dsp_blit:
 _setup_1:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set ddram address to 0 (start of line 1)
     lda #[_FN_SET_DDRAM_ADDR | $00]
@@ -571,7 +573,7 @@ _setup_1:
     sta REG_IOB
     stz REG_IOA
 
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -596,7 +598,7 @@ _loop_1:
     bmi _loop_1
 
 _setup_2:
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ;; set ddram address to $40 (start of line 2)
     lda #[_FN_SET_DDRAM_ADDR | $40]
@@ -605,7 +607,7 @@ _setup_2:
     sta REG_IOB
     stz REG_IOA
 
-    jsr dsp_wait_idle
+    jsr _dsp_wait_idle
 
     ldy #$40 ;; Y is array index
 
@@ -635,15 +637,15 @@ _end:
 
 
 ;;
-;; dsp_wait_idle: Wait for display idle
+;; _dsp_wait_idle: Wait for display idle
 ;;
 ;; Parameters: None
 ;;
 ;; Registers Used: A
 ;;
-.scope
 .text
-dsp_wait_idle:
+_dsp_wait_idle:
+.scope
     ;; set port B to input
     lda #DIR_IN
     sta REG_DDRB

@@ -1,7 +1,7 @@
 ;;
 ;; rng.s - Random number generation
 ;;
-;; Functions:
+;; Exported Functions:
 ;; - rng_init - Initilize the random number generator
 ;; - rand     - Generate a random number
 ;;

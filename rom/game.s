@@ -1,22 +1,25 @@
 ;;
 ;; game.s - Game code
 ;;
-;; Functions:
-;; - game_init           - Initialize the game
-;; - game_run            - Run the game
-;; - game_intro          - Show the intro screen
-;; - game_loop           - The main loop
-;; - game_interrupt      - Macro to handle 250ms ticks
-;; - game_spawn_enemies  - Spawn random enemies
-;; - game_update_enemies - Update enemy positions
-;; - game_update_lasers  - Update laser positions
-;; - game_redraw         - Redraw the display buffer
-;; - game_on_tick        - Handle 250ms tick
-;; - game_on_up          - Handle up button
-;; - game_on_down        - Handle down button
-;; - game_on_left        - Handle left button
-;; - game_on_right       - Handle right button
-;; - game_on_trigger     - Handle trigger button
+;; Exported Functions:
+;; - game_init            - Initialize the game
+;; - game_run             - Run the game
+;;
+;; Local Functions:
+;; - _game_intro          - Show the intro screen
+;; - _game_loop           - The main loop
+;; - _game_interrupt      - Macro to handle 250ms ticks
+;; - _game_handle_input   - Handle input
+;; - _game_spawn_enemies  - Spawn random enemies
+;; - _game_update_enemies - Update enemy positions
+;; - _game_update_lasers  - Update laser positions
+;; - _game_redraw         - Redraw the display buffer
+;; - _game_on_tick        - Handle 250ms tick
+;; - _game_on_up          - Handle up button
+;; - _game_on_down        - Handle down button
+;; - _game_on_left        - Handle left button
+;; - _game_on_right       - Handle right button
+;; - _game_on_trigger     - Handle trigger button
 ;;
 .scope
 
@@ -89,7 +92,7 @@ _enemy_loop:
     sta _VAR_ENEMIES,y
     bne _enemy_loop
 
-    jsr game_redraw
+    jsr _game_redraw
 
     rts
 .scend
@@ -102,7 +105,7 @@ _enemy_loop:
 .text
 game_run:
     ;; do the intro
-    jsr game_intro
+    jsr _game_intro
 
     ;; enable interrupts
     cli
@@ -114,18 +117,18 @@ game_run:
     sta [VAR_DSP_MESSAGE_PTR+1]
 
     ;; enter game loop
-    jsr game_loop
+    jsr _game_loop
 
     rts
 .scend
 
 
 ;;
-;; game_loop: The main game loop
+;; _game_loop: The main game loop
 ;;
-.scope
 .text
-game_loop:
+_game_loop:
+.scope
     ;; handle game tick
     lda VAR_TICK
     bne _on_tick
@@ -136,7 +139,7 @@ game_loop:
     bne _on_button_changed
 
     ;; if neither, loop
-    jmp game_loop
+    jmp _game_loop
 
 _on_button_changed:
     ;; wait for 2ms for results to de-bounce
@@ -151,7 +154,7 @@ _on_button_changed:
     sta _VAR_BUTTON_EVENTS
 
     cli
-    jmp game_loop
+    jmp _game_loop
 
 _on_tick:
     ;; de-bounced sample of button states
@@ -166,27 +169,27 @@ _on_tick:
     and _VAR_BUTTON_EVENTS
     sta _VAR_BUTTON_EVENTS
 
-    jsr game_on_tick
+    jsr _game_on_tick
 
     cli
-    jmp game_loop
+    jmp _game_loop
 .scend
 
 
 ;;
-;; game_on_tick - Handle game tick by refreshing the display
+;; _game_on_tick - Handle game tick by refreshing the display
 ;;
+_game_on_tick:
 .scope
 .text
-game_on_tick:
     ;; reset VAR_TICK
     stz VAR_TICK
 
-    jsr game_handle_input
-    jsr game_spawn_enemies
-    jsr game_update_lasers
-    jsr game_update_enemies
-    jsr game_redraw
+    jsr _game_handle_input
+    jsr _game_spawn_enemies
+    jsr _game_update_lasers
+    jsr _game_update_enemies
+    jsr _game_redraw
     jsr dsp_blit
 
     rts
@@ -194,11 +197,11 @@ game_on_tick:
 
 
 ;;
-;; game_handle_input - Handle user input
+;; _game_handle_input - Handle user input
 ;;
-.scope
 .text
-game_handle_input:
+_game_handle_input:
+.scope
 _check_up:
     lda _VAR_BUTTON_EVENTS
     tax
@@ -225,29 +228,29 @@ _end:
     sta _VAR_BUTTON_EVENTS
     rts
 _on_up:
-    jsr game_on_up
+    jsr _game_on_up
     jmp _check_down
 _on_down:
-    jsr game_on_down
+    jsr _game_on_down
     jmp _check_left
 _on_left:
-    jsr game_on_left
+    jsr _game_on_left
     jmp _check_right
 _on_right:
-    jsr game_on_right
+    jsr _game_on_right
     jmp _check_trigger
 _on_trigger:
-    jsr game_on_trigger
+    jsr _game_on_trigger
     jmp _end
 .scend
 
 
 ;;
-;; game_spawn_enemies - Spawn random enemies
+;; _game_spawn_enemies - Spawn random enemies
 ;;
-.scope
 .text
-game_spawn_enemies:
+_game_spawn_enemies:
+.scope
     ;; find a blank spot in Y, or jump to end
     ldy #_NENEMIES
 _loop:
@@ -280,11 +283,11 @@ _end:
 
 
 ;;
-;; game_update_enemies - Update enemy positions
+;; _game_update_enemies - Update enemy positions
 ;;
-.scope
 .text
-game_update_enemies:
+_game_update_enemies:
+.scope
     ldy #_NENEMIES
 _loop:
     dey
@@ -305,11 +308,11 @@ _end:
 
 
 ;;
-;; game_update_lasers - Update laser positions
+;; _game_update_lasers - Update laser positions
 ;;
-.scope
 .text
-game_update_lasers:
+_game_update_lasers:
+.scope
     ldy #_NLASER
 _loop:
     dey
@@ -328,11 +331,11 @@ _end:
 
 
 ;;
-;; game_on_up - Move character up
+;; _game_on_up - Move character up
 ;;
-.scope
 .text
-game_on_up:
+_game_on_up:
+.scope
     lda _VAR_POS
     cmp #$40
     bmi _end
@@ -345,11 +348,11 @@ _end:
 
 
 ;;
-;; game_on_down - Move character down
+;; _game_on_down - Move character down
 ;;
-.scope
 .text
-game_on_down:
+_game_on_down:
+.scope
     lda _VAR_POS
     cmp #$40
     bpl _end
@@ -362,11 +365,11 @@ _end:
 
 
 ;;
-;; game_on_left - Move character left
+;; _game_on_left - Move character left
 ;;
-.scope
 .text
-game_on_left:
+_game_on_left:
+.scope
     lda _VAR_POS
     and #$BF
     beq _end
@@ -377,11 +380,11 @@ _end:
 
 
 ;;
-;; game_on_right - Move character right
+;; _game_on_right - Move character right
 ;;
-.scope
 .text
-game_on_right:
+_game_on_right:
+.scope
     lda _VAR_POS
     and #$BF
     cmp #14
@@ -393,11 +396,11 @@ _end:
 
 
 ;;
-;; game_on_trigger - NOP
+;; _game_on_trigger - NOP
 ;;
-.scope
 .text
-game_on_trigger:
+_game_on_trigger:
+.scope
     ldy #_NLASER
 _loop:
     dey
@@ -413,11 +416,11 @@ _end:
 
 
 ;;
-;; game_intro: Show the intro screen
+;; _game_intro: Show the intro screen
 ;;
-.scope
 .text
-game_intro:
+_game_intro:
+.scope
     ;; print intro message
     lda #[<intro1]
     sta [VAR_DSP_MESSAGE_PTR+0]
@@ -447,11 +450,11 @@ _loop:
 
 
 ;;
-;; game_redraw: Redraw display buffers
+;; _game_redraw: Redraw display buffers
 ;;
-.scope
 .text
-game_redraw:
+_game_redraw:
+.scope
     sei
 
     ;; clear display buffers

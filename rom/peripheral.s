@@ -1,7 +1,7 @@
 ;;
 ;; periph.s - Driver for the WC65C22 peripheral controller
 ;;
-;; Functions:
+;; Exported Functions:
 ;; - per_init - Initialize the controller
 .scope
 

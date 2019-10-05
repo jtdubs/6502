@@ -1,7 +1,7 @@
 ;;
 ;; entry.s - Main entry point for 6502 code
 ;;
-;; Functions:
+;; Exported Functions:
 ;; - on_reset - Initialize hardware and start the game
 ;; - on_irq   - Handle Timer 1 interrupts and notify the game
 ;;

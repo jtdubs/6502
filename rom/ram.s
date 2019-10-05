@@ -1,7 +1,7 @@
 ;;
 ;; ram.s - RAM functions
 ;;
-;; Functions:
+;; Exported Functions:
 ;; - ram_init - Initialize ram
 ;;
 .scope
