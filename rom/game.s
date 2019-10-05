@@ -287,29 +287,32 @@ _loop:
 
     ;; kill check at current position, in case laser moved into it
     sta _VAR_ENEMY_POS
+    phy
     jsr _game_kill_check
-    cmp #$00
-    beq _loop
+    ply
+    cmp #$01
+    beq _kill
 
     ;; otherwise, move left and kill check again
     dec _VAR_ENEMY_POS
+    phy
     jsr _game_kill_check
-    cmp #$00
-    beq _loop
+    ply
+    cmp #$01
+    beq _kill
 
     ;; check against screen edge
     lda _VAR_ENEMY_POS
     cmp #$FF        ;; wrap-around on first line is $00 - $01 == $FF
-    beq _off_screen
+    beq _kill
     cmp #$3F        ;; wrap-around on second line is $40 - $01 == $3F
-    beq _off_screen
+    beq _kill
 
     ;; it survived, so update it's position
     sta _VAR_ENEMIES,y
     jmp _loop
 
-_off_screen:
-    ;; it left screen, so it's gone
+_kill:
     lda #$FF
     sta _VAR_ENEMIES,y
     jmp _loop
@@ -320,12 +323,30 @@ _end:
 
 
 ;;
-;; _game_kill_check
+;; _game_kill_check - checks for a hit at _VAR_ENEMY_POS and removes the matching laser
 ;;
 .text
 _game_kill_check:
 .scope
-    lda #$FF
+    ;; for each laser
+    ldy #_N_LASERS
+_loop:
+    dey
+    bmi _end
+
+    ;; if laser doesn't match enemy, loop
+    lda _VAR_LASERS,y
+    cmp _VAR_ENEMY_POS
+    bne _loop
+
+    ;; get rid of laser, and return true
+    lda #$00
+    sta _VAR_LASERS,y
+    lda #$01
+    rts
+
+_end:
+    lda #$00
     rts
 .scend
 
