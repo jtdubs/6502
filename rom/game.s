@@ -53,6 +53,7 @@
 .space _VAR_ENEMIES       4   ;; enemy positions
 .space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
 .space _VAR_BUFFER        128 ;; display buffer
+.space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
 
 .text
 intro1: .byte " Squid Defender "
@@ -284,20 +285,47 @@ _loop:
     cmp #$FF
     beq _loop
 
-    ;; otherwise, enemy moves left
-    dec
-    sta _VAR_ENEMIES,y
+    ;; kill check at current position, in case laser moved into it
+    sta _VAR_ENEMY_POS
+    jsr _game_kill_check
+    cmp #$00
+    beq _loop
 
-    ;; if enemy hits left edge of screen, it no longer exists
-    cmp #$3F
-    bne _loop
+    ;; otherwise, move left and kill check again
+    dec _VAR_ENEMY_POS
+    jsr _game_kill_check
+    cmp #$00
+    beq _loop
+
+    ;; check against screen edge
+    lda _VAR_ENEMY_POS
+    cmp #$FF        ;; wrap-around on first line is $00 - $01 == $FF
+    beq _off_screen
+    cmp #$3F        ;; wrap-around on second line is $40 - $01 == $3F
+    beq _off_screen
+
+    ;; it survived, so update it's position
+    sta _VAR_ENEMIES,y
+    jmp _loop
+
+_off_screen:
+    ;; it left screen, so it's gone
     lda #$FF
     sta _VAR_ENEMIES,y
-
-    ;; loop
     jmp _loop
 
 _end:
+    rts
+.scend
+
+
+;;
+;; _game_kill_check
+;;
+.text
+_game_kill_check:
+.scope
+    lda #$FF
     rts
 .scend
 
