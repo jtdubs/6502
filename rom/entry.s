@@ -4,6 +4,9 @@
 ;; Exported Functions:
 ;; - on_reset - Initialize hardware and start the game
 ;; - on_irq   - Handle Timer 1 interrupts and notify the game
+;; - on_nmi   - NOP
+;; - on_abort - NOP
+;; - on_cop   - NOP
 ;;
 .scope
 
@@ -99,6 +102,36 @@ _not_timer_1:
 _end:
     ;; restore accum value and return
     pla
+    rti
+.scend
+
+
+;;
+;; on_nmi
+;;
+.scope
+.text
+on_nmi:
+    rti
+.scend
+
+
+;;
+;; on_abort
+;;
+.scope
+.text
+on_abort:
+    rti
+.scend
+
+
+;;
+;; on_cop
+;;
+.scope
+.text
+on_cop:
     rti
 .scend
 

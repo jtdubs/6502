@@ -42,10 +42,10 @@
 
 .text
 .advance $FFF4, $FF
-.word $0000 ; cop
-.word $0000 ; --
-.word $0000 ; abort
-.word $0000 ; nmi
+.word on_cop
+.word $0000
+.word on_abort
+.word on_nmi
 .word on_reset
 .word on_irq
 

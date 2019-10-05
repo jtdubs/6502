@@ -42,19 +42,19 @@
 ;; Game Data
 ;;
 
-.alias _N_LASERS  3
+.alias _N_LASERS  4
 .alias _N_ENEMIES 4
 
 .data
 .space VAR_TICK           1   ;; counts 250ms ticks
 .space _VAR_BUTTON_STATE  1   ;; button state
+.space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
 .space _VAR_POS           1   ;; player position
-.space _VAR_LASERS        3   ;; laser positions
+.space _VAR_LASERS        4   ;; laser positions
 .space _VAR_ENEMIES       4   ;; enemy positions
 .space _VAR_EXPLOSIONS    4   ;; explosion positions
-.space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
-.space _VAR_BUFFER        128 ;; display buffer
 .space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
+.space _VAR_BUFFER        128 ;; display buffer
 
 .text
 intro1: .byte " Squid Defender "
@@ -81,9 +81,9 @@ game_init:
     lda #$FF
     sta _VAR_BUTTON_EVENTS
 
-    ;; zero out laser array
+    ;; ff out laser array
     lda #$00
-    ldy _N_LASERS
+    ldy #_N_LASERS
 _laser_loop:
     dey
     sta _VAR_LASERS,y
@@ -91,7 +91,7 @@ _laser_loop:
 
     ;; ff out enemy and explosion array
     lda #$FF
-    ldy _N_ENEMIES
+    ldy #_N_ENEMIES
 _enemy_loop:
     dey
     sta _VAR_ENEMIES,y
@@ -394,7 +394,7 @@ _game_update_explosions:
 .scope
     ;; clear explosion array
     lda #$FF
-    ldy _N_ENEMIES
+    ldy #_N_ENEMIES
 _loop:
     dey
     sta _VAR_EXPLOSIONS,y
@@ -594,7 +594,7 @@ _game_redraw:
 
     ;; clear display buffers
     lda #$20 ;; space
-    ldy 16
+    ldy #16
 _clear:
     dey
     sta _VAR_BUFFER,y
