@@ -1,6 +1,7 @@
 ;;
 ;; main.s - defines the memory map and pulls in the code and data
 ;;
+.scope
 
 
 ;;
@@ -67,3 +68,5 @@
 
 .text
 .checkpc $10000
+
+.scend

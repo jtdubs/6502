@@ -3,6 +3,7 @@
 ;;
 ;; Functions:
 ;; - per_init - Initialize the controller
+.scope
 
 
 ;;
@@ -75,4 +76,6 @@ per_init:
     sta REG_DDRB
 
     rts
+.scend
+
 .scend

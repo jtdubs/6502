@@ -5,6 +5,7 @@
 ;; - rng_init - Initilize the random number generator
 ;; - rand     - Generate a random number
 ;;
+.scope
 
 
 ;;
@@ -12,7 +13,7 @@
 ;;
 
 .data
-.space VAR_RAND_SEED 2
+.space _VAR_SEED 2
 
 
 ;;
@@ -24,9 +25,9 @@
 .text
 rng_init:
     lda #$A5
-    sta [VAR_RAND_SEED+0]
+    sta [_VAR_SEED+0]
     lda #$96
-    sta [VAR_RAND_SEED+1]
+    sta [_VAR_SEED+1]
     rts
 .scend
 
@@ -46,15 +47,17 @@ rng_init:
 .text
 rand:
     ldy #8
-    lda [VAR_RAND_SEED+0]
+    lda [_VAR_SEED+0]
 _loop:
     asl
-    rol [VAR_RAND_SEED+1]
+    rol [_VAR_SEED+1]
     bcc _skip
     eor #$39
 _skip:
     dey
     bne _loop
-    sta [VAR_RAND_SEED+0]
+    sta [_VAR_SEED+0]
     rts
+.scend
+
 .scend
