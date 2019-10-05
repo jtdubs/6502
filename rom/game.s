@@ -255,8 +255,8 @@ _loop:
     jsr rand
     ply
 
-    ;; only spawn 30% of the time
-    cmp #$B0
+    ;; don't spawn every time
+    cmp #$80
     bmi _end
 
     ;; use random number to choose row
@@ -550,13 +550,36 @@ _game_intro:
     cli
 
 _loop:
-    ;; wait for 3 seconds (12 * 250ms)
-    lda VAR_TICK
-    cmp #12
-    bcc _loop
+    ;; if button state unchanged, loop
+    lda REG_IOA
+    cmp _VAR_BUTTON_STATE
+    beq _loop
 
-    ;; clear the tick counter
+    jsr _game_sample_buttons
+
+    lda _VAR_BUTTON_EVENTS
+    and #_BTN_TRIGGER
+    bne _loop
+
+_end:
+    ;; seed RNG based on current timer value
+    jsr rng_init
+
+    ;; claer display
+    jsr dsp_clear
+
+    ;; reset state for main game
+    lda #$FF
+    sta _VAR_BUTTON_EVENTS
+
+    ;; wait for 1 second (4 ticks)
     stz VAR_TICK
+_delay_loop:
+    lda VAR_TICK
+    cmp #4
+    bcc _delay_loop
+    stz VAR_TICK
+
     rts
 .scend
 

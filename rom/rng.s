@@ -24,9 +24,9 @@
 .scope
 .text
 rng_init:
-    lda #$A5
+    lda REG_T1C_L
     sta [_VAR_SEED+0]
-    lda #$96
+    lda REG_T1C_H
     sta [_VAR_SEED+1]
     rts
 .scend

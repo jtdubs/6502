@@ -35,7 +35,6 @@ on_reset:
     ;; initialize hardware
     jsr per_init
     jsr dsp_init
-    jsr rng_init
 
     ;; initialize variables
     stz _VAR_IRQ_COUNTER
