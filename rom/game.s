@@ -221,7 +221,7 @@ _loop:
     phy
     jsr rand
     ply
-    cmp #$A0
+    cmp #$B0
     bmi _end
     and #$40
     clc

@@ -1,4 +1,4 @@
 TODO:
 - handle input in on_tick
 - collisions
-- etc.
+- game end condition
