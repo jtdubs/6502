@@ -42,15 +42,13 @@
 .alias NLASER   3
 .alias NENEMIES 4
 
-.data zp
+.data
 .space VAR_TICK          1   ;; counts 250ms ticks
 .space VAR_BUTTON_STATE  1   ;; button state
 .space VAR_POS           1   ;; player position
 .space VAR_LASERS        3   ;; laser positions
 .space VAR_ENEMIES       4   ;; enemy positions
 .space VAR_BUTTON_EVENTS 1   ;; button events for this tick
-
-.data
 .space VAR_BUFFER       128 ;; display buffer
 
 .text

@@ -57,8 +57,8 @@ on_reset:
 ;; on_irq
 ;;
 .scope
-.data zp
-.space VAR_IRQ_COUNTER  1
+.data
+.space VAR_IRQ_COUNTER 1
 
 .text
 on_irq:

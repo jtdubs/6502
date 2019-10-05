@@ -11,7 +11,7 @@
 ;; Zero Page Variables
 ;;
 
-.data zp
+.data
 .space VAR_RAND_SEED 2
 
 
