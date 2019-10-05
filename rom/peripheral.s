@@ -32,7 +32,7 @@
 ;; DDR directions
 ;;
 .alias DIR_IN  $00
-.alias DIR_OUT $ff
+.alias DIR_OUT $FF
 
 
 ;;

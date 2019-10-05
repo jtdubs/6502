@@ -14,7 +14,6 @@
 ;; - _game_update_enemies - Update enemy positions
 ;; - _game_update_lasers  - Update laser positions
 ;; - _game_redraw         - Redraw the display buffer
-;; - _game_on_tick        - Handle 250ms tick
 ;; - _game_on_up          - Handle up button
 ;; - _game_on_down        - Handle down button
 ;; - _game_on_left        - Handle left button
@@ -58,9 +57,10 @@
 .text
 intro1: .byte " Squid Defender "
 intro2: .byte "     10000      "
-player: .byte $D6,$DB
-laser:  .byte $A5
-enemy:  .byte $F4
+
+sprite_player: .byte $D6,$DB
+sprite_laser:  .byte $A5
+sprite_enemy:  .byte $F4
 
 
 ;;
@@ -69,10 +69,12 @@ enemy:  .byte $F4
 .scope
 .text
 game_init:
+    ;; zero tick counter, button state, position
     stz VAR_TICK
     stz _VAR_BUTTON_STATE
     stz _VAR_POS
 
+    ;; button events start at FF because button presses are low
     lda #$FF
     sta _VAR_BUTTON_EVENTS
 
@@ -92,6 +94,7 @@ _enemy_loop:
     sta _VAR_ENEMIES,y
     bne _enemy_loop
 
+    ;; fill the display buffer w/ the initial game state
     jsr _game_redraw
 
     rts
@@ -133,64 +136,46 @@ _game_loop:
     lda VAR_TICK
     bne _on_tick
 
-    ;; if button state changed, _on_button_changed
+    ;; if button state un changed, loop
     lda REG_IOA
     cmp _VAR_BUTTON_STATE
-    bne _on_button_changed
-
-    ;; if neither, loop
-    jmp _game_loop
+    beq _game_loop
 
 _on_button_changed:
-    ;; wait for 2ms for results to de-bounce
-    sta _VAR_BUTTON_STATE
-    lda #5
-    jsr delay_ms
-    lda _VAR_BUTTON_STATE
-    ora REG_IOA
-
-    ;; include in button events
-    and _VAR_BUTTON_EVENTS
-    sta _VAR_BUTTON_EVENTS
-
-    cli
+    jsr _game_sample_buttons
     jmp _game_loop
 
 _on_tick:
-    ;; de-bounced sample of button states
-    lda REG_IOA
-    sta _VAR_BUTTON_STATE
-    lda #5
-    jsr delay_ms
-    lda _VAR_BUTTON_STATE
-    ora REG_IOA
-
-    ;; include in button events
-    and _VAR_BUTTON_EVENTS
-    sta _VAR_BUTTON_EVENTS
-
-    jsr _game_on_tick
-
-    cli
-    jmp _game_loop
-.scend
-
-
-;;
-;; _game_on_tick - Handle game tick by refreshing the display
-;;
-_game_on_tick:
-.scope
-.text
-    ;; reset VAR_TICK
     stz VAR_TICK
-
+    jsr _game_sample_buttons
     jsr _game_handle_input
     jsr _game_spawn_enemies
     jsr _game_update_lasers
     jsr _game_update_enemies
     jsr _game_redraw
     jsr dsp_blit
+    jmp _game_loop
+.scend
+
+
+;;
+;; _game_sample_buttons
+;;
+.text
+_game_sample_buttons:
+.scope
+    ;; sample 2ms apart and OR together to de-bounce
+    lda REG_IOA
+    pha
+    lda #2
+    jsr delay_ms
+    pla
+    ora REG_IOA
+    sta _VAR_BUTTON_STATE
+
+    ;; include in button events
+    and _VAR_BUTTON_EVENTS
+    sta _VAR_BUTTON_EVENTS
 
     rts
 .scend
@@ -288,20 +273,30 @@ _end:
 .text
 _game_update_enemies:
 .scope
+    ;; for each enemy
     ldy #_N_ENEMIES
 _loop:
     dey
     bmi _end
+
+    ;; if enemy position is FF, then it doesn't exist
     lda _VAR_ENEMIES,y
     cmp #$FF
     beq _loop
+
+    ;; otherwise, enemy moves left
     dec
     sta _VAR_ENEMIES,y
+
+    ;; if enemy hits left edge of screen, it no longer exists
     cmp #$3F
     bne _loop
     lda #$FF
     sta _VAR_ENEMIES,y
+
+    ;; loop
     jmp _loop
+
 _end:
     rts
 .scend
@@ -313,18 +308,28 @@ _end:
 .text
 _game_update_lasers:
 .scope
+    ;; for each laser
     ldy #_N_LASERS
 _loop:
     dey
     bmi _end
+
+    ;; if laser position is 0, then it doesn't exist
     lda _VAR_LASERS,y
     beq _loop
+
+    ;; otherwise, laser moves right
     inc
     sta _VAR_LASERS,y
+
+    ;; if laser passes right edge of screen, it no longer exists
     and #$0F
     bne _loop
     sta _VAR_LASERS,y
+
+    ;; loop
     jmp _loop
+
 _end:
     rts
 .scend
@@ -396,20 +401,26 @@ _end:
 
 
 ;;
-;; _game_on_trigger - NOP
+;; _game_on_trigger - Fire a laser
 ;;
 .text
 _game_on_trigger:
 .scope
+    ;; for each laser
     ldy #_N_LASERS
 _loop:
     dey
     bmi _end
+
+    ;; if laser is non-zero, it already exists
     lda _VAR_LASERS,y
     bne _loop
+
+    ;; create a laser at POS+1
     lda _VAR_POS
     inc
     sta _VAR_LASERS,y
+
 _end:
     rts
 .scend
@@ -468,14 +479,14 @@ _clear:
 
     ;; draw player
     ldy _VAR_POS
-    lda [player+0]
+    lda [sprite_player+0]
     sta _VAR_BUFFER,y
     iny
-    lda [player+1]
+    lda [sprite_player+1]
     sta _VAR_BUFFER,y
 
     ;; draw enemies
-    lda enemy
+    lda sprite_enemy
     ldy #_N_ENEMIES
 _enemy_loop:
     dey
@@ -488,7 +499,7 @@ _enemy_loop:
 _enemy_done:
 
     ;; draw lasers
-    lda laser
+    lda sprite_laser
     ldy #_N_LASERS
 _laser_loop:
     dey

@@ -41,7 +41,7 @@
 ;;
 
 .text
-.advance $fff4, $ff
+.advance $FFF4, $FF
 .word $0000 ; cop
 .word $0000 ; --
 .word $0000 ; abort

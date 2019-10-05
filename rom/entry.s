@@ -29,7 +29,7 @@ on_reset:
     sei
 
     ;; initialize stack pointer
-    ldx #$ff
+    ldx #$FF
     txs
 
     ;; initialize hardware
@@ -93,7 +93,7 @@ _timer_1:
 
 _not_timer_1:
     ;; clear the interrupt
-    lda #$ff
+    lda #$FF
     sta REG_IFR
     jmp _end
 
