@@ -56,6 +56,5 @@ _skip:
     dey
     bne _loop
     sta [VAR_RAND_SEED+0]
-    cmp #0
     rts
 .scend

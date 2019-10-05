@@ -38,6 +38,6 @@ _next_page:
     inc
     sta [_RAM_PTR+1]
     ;; Loop until up to $4000
-    cmp $40
+    cmp #$40
     bne _zero_page
 .scend

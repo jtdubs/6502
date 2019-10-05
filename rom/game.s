@@ -92,8 +92,7 @@ game_run:
 game_loop:
     ;; if 250ms elapsed, _on_tick
     lda VAR_TICK
-    cmp #$01
-    bcs _on_tick
+    bne _on_tick
 
     ;; if button state changed, _on_button_changed
     lda REG_IOA
@@ -248,8 +247,7 @@ _end:
 game_on_left:
     lda VAR_POS
     and #$BF
-    cmp #1
-    bmi _end
+    beq _end
     dec VAR_POS
 
     jsr game_redraw
@@ -317,9 +315,9 @@ game_intro:
     cli
 
 _loop:
-    ;; wait for 4 seconds (16 * 250ms)
+    ;; wait for 3 seconds (12 * 250ms)
     lda VAR_TICK
-    cmp #16
+    cmp #12
     bcc _loop
 
     ;; clear the tick counter
