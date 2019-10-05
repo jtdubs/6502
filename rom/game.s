@@ -36,11 +36,13 @@
 ;; Game Data
 ;;
 
+.alias NLASER 3
+
 .data zp
-.space VAR_TICK         1   ;; counts 250ms ticks
-.space VAR_BUTTON_STATE 1   ;; button state
-.space VAR_POS          1   ;; player position
-.space VAR_LASER        1   ;; laser position
+.space VAR_TICK         1 ;; counts 250ms ticks
+.space VAR_BUTTON_STATE 1 ;; button state
+.space VAR_POS          1 ;; player position
+.space VAR_LASERS       3 ;; laser positions
 
 .data
 .space VAR_BUFFER       128 ;; display buffer
@@ -59,11 +61,20 @@ enemy:  .byte $3C,$BA,$7F,0
 .scope
 .text
 game_init:
-    ;; initialize variables
     stz VAR_TICK
     stz VAR_BUTTON_STATE
     stz VAR_POS
-    stz VAR_LASER
+
+    ;; zero out laser array
+    lda #$00
+    ldy #NLASER
+_laser_loop:
+    dey
+    bmi _laser_done
+    sta VAR_LASERS,y
+    jmp _laser_loop
+_laser_done:
+
     jsr game_redraw
 .scend
 
@@ -166,9 +177,8 @@ game_on_tick:
     ;; reset VAR_TICK
     stz VAR_TICK
 
-    jsr game_update_laser
-
-    ;; re-paint display
+    jsr game_update_lasers
+    jsr game_redraw
     jsr dsp_blit
 
     rts
@@ -176,23 +186,25 @@ game_on_tick:
 
 
 ;;
-;; game_update_laser - Update laser position and redraw if needed
+;; game_update_lasers - Update laser positions
 ;;
 .scope
 .text
-game_update_laser:
-    lda VAR_LASER
-    beq _end
+game_update_lasers:
+    ldy #NLASER
+_loop:
+    dey
+    bmi _end
+    lda VAR_LASERS,y
+    beq _loop
     inc
-    sta VAR_LASER
+    sta VAR_LASERS,y
     and $BF
     cmp #15
-    bmi _redraw
-    stz VAR_LASER
-
-_redraw:
-    jsr game_redraw
-
+    bmi _loop
+    lda #$ff
+    sta VAR_LASERS,y
+    jmp _loop
 _end:
     rts
 .scend
@@ -210,8 +222,6 @@ game_on_up:
     sec
     sbc #$40
     sta VAR_POS
-
-    jsr game_redraw
 _end:
     rts
 .scend
@@ -229,8 +239,6 @@ game_on_down:
     clc
     adc #$40
     sta VAR_POS
-
-    jsr game_redraw
 _end:
     rts
 .scend
@@ -246,8 +254,6 @@ game_on_left:
     and #$BF
     beq _end
     dec VAR_POS
-
-    jsr game_redraw
 _end:
     rts
 .scend
@@ -264,8 +270,6 @@ game_on_right:
     cmp #14
     bpl _end
     inc VAR_POS
-
-    jsr game_redraw
 _end:
     rts
 .scend
@@ -277,13 +281,15 @@ _end:
 .scope
 .text
 game_on_trigger:
-    lda VAR_LASER
-    bne _end
+    ldy #NLASER
+_loop:
+    dey
+    bmi _end
+    lda VAR_LASERS,y
+    bne _loop
     lda VAR_POS
     inc
-    sta VAR_LASER
-
-    jsr game_redraw
+    sta VAR_LASERS,y
 _end:
     rts
 .scend
@@ -367,13 +373,18 @@ _clear_line_2:
     lda [enemy+2]
     sta VAR_BUFFER,y
 
-    ;; draw laser
-    ldy VAR_LASER
-    beq _end
+    ;; draw lasers
     lda laser
-    sta VAR_BUFFER,y
+    ldy #NLASER
+_laser_loop:
+    dey
+    bmi _laser_done
+    ldx VAR_LASERS,y
+    beq _laser_loop
+    sta VAR_BUFFER,x
+    jmp _laser_loop
+_laser_done:
 
-_end:
     cli
     rts
 .scend
