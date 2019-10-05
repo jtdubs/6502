@@ -41,12 +41,14 @@
 
 .alias NLASER   3
 .alias NENEMIES 4
+
 .data zp
-.space VAR_TICK         1 ;; counts 250ms ticks
-.space VAR_BUTTON_STATE 1 ;; button state
-.space VAR_POS          1 ;; player position
-.space VAR_LASERS       3 ;; laser positions
-.space VAR_ENEMIES      4 ;; enemy positions
+.space VAR_TICK          1   ;; counts 250ms ticks
+.space VAR_BUTTON_STATE  1   ;; button state
+.space VAR_POS           1   ;; player position
+.space VAR_LASERS        3   ;; laser positions
+.space VAR_ENEMIES       4   ;; enemy positions
+.space VAR_BUTTON_EVENTS 1   ;; button events for this tick
 
 .data
 .space VAR_BUFFER       128 ;; display buffer
@@ -69,25 +71,24 @@ game_init:
     stz VAR_BUTTON_STATE
     stz VAR_POS
 
+    lda #$FF
+    sta VAR_BUTTON_EVENTS
+
     ;; zero out laser array
     lda #$00
-    ldy #NLASER
+    ldy NLASER
 _laser_loop:
     dey
-    bmi _laser_done
     sta VAR_LASERS,y
-    jmp _laser_loop
-_laser_done:
+    bne _laser_loop
 
     ;; ff out enemy array
     lda #$FF
-    ldy #NENEMIES
+    ldy NENEMIES
 _enemy_loop:
     dey
-    bmi _enemy_done
     sta VAR_ENEMIES,y
-    jmp _enemy_loop
-_enemy_done:
+    bne _enemy_loop
 
     jsr game_redraw
 
@@ -126,7 +127,7 @@ game_run:
 .scope
 .text
 game_loop:
-    ;; if 250ms elapsed, _on_tick
+    ;; handle game tick
     lda VAR_TICK
     bne _on_tick
 
@@ -139,48 +140,35 @@ game_loop:
     jmp game_loop
 
 _on_button_changed:
-    ;; wait for 5ms for results to de-bounce
+    ;; wait for 2ms for results to de-bounce
     sta VAR_BUTTON_STATE
     lda #5
     jsr delay_ms
     lda VAR_BUTTON_STATE
     ora REG_IOA
 
-    ;; dispatch buttons
-    tax
-    and #BTN_UP
-    beq _on_up
-    txa
-    and #BTN_DOWN
-    beq _on_down
-    txa
-    and #BTN_LEFT
-    beq _on_left
-    txa
-    and #BTN_RIGHT
-    beq _on_right
-    txa
-    and #BTN_TRIGGER
-    beq _on_trigger
-    jmp _continue_loop
-_on_right:
-    jsr game_on_right
-    jmp _continue_loop
-_on_left:
-    jsr game_on_left
-    jmp _continue_loop
-_on_down:
-    jsr game_on_down
-    jmp _continue_loop
-_on_up:
-    jsr game_on_up
-    jmp _continue_loop
-_on_trigger:
-    jsr game_on_trigger
-    jmp _continue_loop
+    ;; include in button events
+    and VAR_BUTTON_EVENTS
+    sta VAR_BUTTON_EVENTS
+
+    cli
+    jmp game_loop
+
 _on_tick:
+    ;; de-bounced sample of button states
+    lda REG_IOA
+    sta VAR_BUTTON_STATE
+    lda #5
+    jsr delay_ms
+    lda VAR_BUTTON_STATE
+    ora REG_IOA
+
+    ;; include in button events
+    and VAR_BUTTON_EVENTS
+    sta VAR_BUTTON_EVENTS
+
     jsr game_on_tick
-_continue_loop:
+
     cli
     jmp game_loop
 .scend
@@ -195,6 +183,7 @@ game_on_tick:
     ;; reset VAR_TICK
     stz VAR_TICK
 
+    jsr game_handle_input
     jsr game_spawn_enemies
     jsr game_update_lasers
     jsr game_update_enemies
@@ -206,11 +195,61 @@ game_on_tick:
 
 
 ;;
+;; game_handle_input - Handle user input
+;;
+.scope
+.text
+game_handle_input:
+_check_up:
+    lda VAR_BUTTON_EVENTS
+    tax
+    and #BTN_UP
+    beq _on_up
+_check_down:
+    txa
+    and #BTN_DOWN
+    beq _on_down
+_check_left:
+    txa
+    and #BTN_LEFT
+    beq _on_left
+_check_right:
+    txa
+    and #BTN_RIGHT
+    beq _on_right
+_check_trigger:
+    txa
+    and #BTN_TRIGGER
+    beq _on_trigger
+_end:
+    lda #$FF
+    sta VAR_BUTTON_EVENTS
+    rts
+_on_up:
+    jsr game_on_up
+    jmp _check_down
+_on_down:
+    jsr game_on_down
+    jmp _check_left
+_on_left:
+    jsr game_on_left
+    jmp _check_right
+_on_right:
+    jsr game_on_right
+    jmp _check_trigger
+_on_trigger:
+    jsr game_on_trigger
+    jmp _end
+.scend
+
+
+;;
 ;; game_spawn_enemies - Spawn random enemies
 ;;
 .scope
 .text
 game_spawn_enemies:
+    ;; find a blank spot in Y, or jump to end
     ldy #NENEMIES
 _loop:
     dey
@@ -218,15 +257,24 @@ _loop:
     lda VAR_ENEMIES,y
     cmp #$FF
     bne _loop
+
+    ;; get a random number in A
     phy
     jsr rand
     ply
+
+    ;; only spawn 30% of the time
     cmp #$B0
     bmi _end
+
+    ;; use random number to choose row
     and #$40
     clc
     adc #$10
+
+    ;; create the enemy
     sta VAR_ENEMIES,y
+
 _end:
     rts
 .scend
@@ -271,10 +319,8 @@ _loop:
     beq _loop
     inc
     sta VAR_LASERS,y
-    and $BF
-    cmp #15
-    bmi _loop
-    lda #$ff
+    and #$0F
+    bne _loop
     sta VAR_LASERS,y
     jmp _loop
 _end:
@@ -412,19 +458,11 @@ game_redraw:
     ;; clear display buffers
     lda #$20 ;; space
     ldy 16
-_clear_line_1:
+_clear:
     dey
     sta VAR_BUFFER,y
-    bne _clear_line_1
-    stz [VAR_BUFFER+$10]
-
-    lda #$20 ;; space
-    ldy 16
-_clear_line_2:
-    dey
     sta [VAR_BUFFER+$40],y
-    bne _clear_line_2
-    stz [VAR_BUFFER+$50]
+    bne _clear
 
     ;; draw player
     ldy VAR_POS
