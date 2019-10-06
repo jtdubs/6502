@@ -485,9 +485,13 @@ dsp_print_1:
     ldy #$00 ;; Y is array index
 
 _loop:
-    ;; load the character into IO B
+    ;; stop on 16 chars, or null
     lda (VAR_DSP_MESSAGE_PTR),y
     beq _end
+    cpy #$10
+    beq _end
+
+    ;; load the character into IO B
     sta REG_IOB
 
     ;; pulse E
@@ -531,9 +535,13 @@ dsp_print_2:
     ldy #$00 ;; Y is array index
 
 _loop:
-    ;; load the character into IO B
+    ;; stop on 16 chars, or null
     lda (VAR_DSP_MESSAGE_PTR),y
     beq _end
+    cpy #$10
+    beq _end
+
+    ;; load the character into IO B
     sta REG_IOB
 
     ;; pulse E
