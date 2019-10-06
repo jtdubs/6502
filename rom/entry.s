@@ -54,7 +54,6 @@ on_reset:
     sta REG_IER
 
     ;; run the game
-    jsr game_init
     jsr game_run
 .scend
 

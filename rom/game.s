@@ -2,11 +2,12 @@
 ;; game.s - Game code
 ;;
 ;; Exported Functions:
-;; - game_init            - Initialize the game
 ;; - game_run             - Run the game
 ;;
 ;; Local Functions:
+;; - _game_init           - Initialize the game
 ;; - _game_intro          - Show the intro screen
+;; - _game_outro          - Show the outro screen
 ;; - _game_loop           - The main loop
 ;; - _game_interrupt      - Macro to handle 250ms ticks
 ;; - _game_handle_input   - Handle input
@@ -52,13 +53,17 @@
 .space _VAR_POS           1   ;; player position
 .space _VAR_ENEMIES       4   ;; enemy positions
 .space _VAR_EXPLOSIONS    4   ;; explosion positions
-.space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
-.space _VAR_BUFFER        128 ;; display buffer
 .space _VAR_LASERS        4   ;; laser positions
+.space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
+.space _VAR_END_GAME      1   ;; end game signal
+.space _VAR_BUFFER        128 ;; display buffer
 
 .text
 intro1: .byte " Squid Defender ",0
 intro2: .byte "     10000      ",0
+
+outro1: .byte "   Game Over    ",0
+outro2: .byte "                ",0
 
 sprite_player:    .byte $D6,$DB
 sprite_laser:     .byte $A5
@@ -67,15 +72,16 @@ sprite_explosion: .byte $2A
 
 
 ;;
-;; game_init: Game Initialization
+;; _game_init: Game Initialization
 ;;
-.scope
 .text
-game_init:
+_game_init:
+.scope
     ;; zero tick counter, button state, position
     stz VAR_TICK
     stz _VAR_BUTTON_STATE
     stz _VAR_POS
+    stz _VAR_END_GAME
 
     ;; button events start at FF because button presses are low
     lda #$FF
@@ -111,6 +117,9 @@ _enemy_loop:
 .scope
 .text
 game_run:
+    ;; initialize the game
+    jsr _game_init
+
     ;; do the intro
     jsr _game_intro
 
@@ -123,7 +132,10 @@ game_run:
     ;; enter game loop
     jsr _game_loop
 
-    rts
+    ;; do the outro
+    jsr _game_outro
+
+    jmp game_run
 .scend
 
 
@@ -133,6 +145,10 @@ game_run:
 .text
 _game_loop:
 .scope
+    ;; if time to end game, do so
+    lda _VAR_END_GAME
+    bne _end
+
     ;; handle game tick
     lda VAR_TICK
     bne _on_tick
@@ -157,6 +173,9 @@ _on_tick:
     jsr _game_redraw
     jsr dsp_blit
     jmp _game_loop
+
+_end:
+    rts
 .scend
 
 
@@ -294,28 +313,35 @@ _loop:
     cmp #$01
     beq _kill
 
-    ;; otherwise, move left and kill check again
+    ;; move left and check against edge of screen (end of game condition)
     dec _VAR_ENEMY_POS
+    lda _VAR_ENEMY_POS
+    cmp #$FF        ;; wrap-around on first line is $00 - $01 == $FF
+    beq _game_end
+    cmp #$3F        ;; wrap-around on second line is $40 - $01 == $3F
+    beq _game_end
+
+    ;; kill check in new position
     phy
     jsr _game_kill_check
     ply
     cmp #$01
     beq _kill
 
-    ;; check against screen edge
-    lda _VAR_ENEMY_POS
-    cmp #$FF        ;; wrap-around on first line is $00 - $01 == $FF
-    beq _kill
-    cmp #$3F        ;; wrap-around on second line is $40 - $01 == $3F
-    beq _kill
-
     ;; it survived, so update it's position
+    lda _VAR_ENEMY_POS
     sta _VAR_ENEMIES,y
     jmp _loop
 
 _kill:
     lda #$FF
     sta _VAR_ENEMIES,y
+    jmp _loop
+
+_game_end:
+    lda #$FF
+    sta _VAR_ENEMIES,y
+    sta _VAR_END_GAME
     jmp _loop
 
 _end:
@@ -574,6 +600,53 @@ _end:
 _delay_loop:
     lda VAR_TICK
     cmp #4
+    bcc _delay_loop
+    stz VAR_TICK
+
+    rts
+.scend
+
+
+;;
+;; _game_outro: Show the outro screen
+;;
+.text
+_game_outro:
+.scope
+    ;; print intro message
+    lda #[<outro1]
+    sta [VAR_DSP_MESSAGE_PTR+0]
+    lda #[>outro1]
+    sta [VAR_DSP_MESSAGE_PTR+1]
+    jsr dsp_print_1
+
+    lda #[<outro2]
+    sta [VAR_DSP_MESSAGE_PTR+0]
+    lda #[>outro2]
+    sta [VAR_DSP_MESSAGE_PTR+1]
+    jsr dsp_print_2
+
+_loop:
+    ;; if button state unchanged, loop
+    lda REG_IOA
+    cmp _VAR_BUTTON_STATE
+    beq _loop
+
+    jsr _game_sample_buttons
+
+    lda _VAR_BUTTON_EVENTS
+    and #_BTN_TRIGGER
+    bne _loop
+
+_end:
+    ;; claer display
+    jsr dsp_clear
+
+    ;; wait for 0.5 second (2 ticks)
+    stz VAR_TICK
+_delay_loop:
+    lda VAR_TICK
+    cmp #2
     bcc _delay_loop
     stz VAR_TICK
 
