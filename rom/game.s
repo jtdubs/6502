@@ -50,15 +50,15 @@
 .space _VAR_BUTTON_STATE  1   ;; button state
 .space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
 .space _VAR_POS           1   ;; player position
-.space _VAR_LASERS        4   ;; laser positions
 .space _VAR_ENEMIES       4   ;; enemy positions
 .space _VAR_EXPLOSIONS    4   ;; explosion positions
 .space _VAR_ENEMY_POS     1   ;; temp storage for kill checks
 .space _VAR_BUFFER        128 ;; display buffer
+.space _VAR_LASERS        4   ;; laser positions
 
 .text
-intro1: .byte " Squid Defender "
-intro2: .byte "     10000      "
+intro1: .byte " Squid Defender ",0
+intro2: .byte "     10000      ",0
 
 sprite_player:    .byte $D6,$DB
 sprite_laser:     .byte $A5
@@ -81,15 +81,15 @@ game_init:
     lda #$FF
     sta _VAR_BUTTON_EVENTS
 
-    ;; ff out laser array
-    lda #$00
+    ;; FF out laser array
+    lda #$FF
     ldy #_N_LASERS
 _laser_loop:
     dey
     sta _VAR_LASERS,y
     bne _laser_loop
 
-    ;; ff out enemy and explosion array
+    ;; FF out enemy and explosion array
     lda #$FF
     ldy #_N_ENEMIES
 _enemy_loop:
@@ -113,9 +113,6 @@ _enemy_loop:
 game_run:
     ;; do the intro
     jsr _game_intro
-
-    ;; enable interrupts
-    cli
 
     ;; from now on we draw from _VAR_BUFFER
     lda #[<_VAR_BUFFER]
@@ -344,7 +341,7 @@ _loop:
     bne _loop
 
     ;; get rid of laser
-    lda #$00
+    lda #$FF
     sta _VAR_LASERS,y
 
     ;; create explosion
@@ -415,8 +412,9 @@ _loop:
     dey
     bmi _end
 
-    ;; if laser position is 0, then it doesn't exist
+    ;; if laser position is FF, then it doesn't exist
     lda _VAR_LASERS,y
+    cmp #$FF
     beq _loop
 
     ;; otherwise, laser moves right
@@ -426,6 +424,7 @@ _loop:
     ;; if laser passes right edge of screen, it no longer exists
     and #$0F
     bne _loop
+    lda #$FF
     sta _VAR_LASERS,y
 
     ;; loop
@@ -513,8 +512,9 @@ _loop:
     dey
     bmi _end
 
-    ;; if laser is non-zero, it already exists
+    ;; if laser is non-FF, it already exists
     lda _VAR_LASERS,y
+    cmp #$FF
     bne _loop
 
     ;; create a laser at POS+1
@@ -545,9 +545,6 @@ _game_intro:
     lda #[>intro2]
     sta [VAR_DSP_MESSAGE_PTR+1]
     jsr dsp_print_2
-
-    ;; enable interrupts
-    cli
 
 _loop:
     ;; if button state unchanged, loop
@@ -629,6 +626,7 @@ _laser_loop:
     dey
     bmi _laser_done
     ldx _VAR_LASERS,y
+    cpx #$FF
     beq _laser_loop
     sta _VAR_BUFFER,x
     jmp _laser_loop

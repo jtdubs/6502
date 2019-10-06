@@ -28,9 +28,6 @@
 .scope
 .text
 on_reset:
-    ;; disable interrupts until after init sequence
-    sei
-
     ;; initialize stack pointer
     ldx #$FF
     txs
