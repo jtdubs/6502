@@ -5,7 +5,14 @@
 ;; - rng_init - Initilize the random number generator
 ;; - rand     - Generate a random number
 ;;
-.scope
+.pc02
+
+
+;; Imports from Peripheral Controller
+.import REG_T1C_H, REG_T1C_L
+
+;: Exports
+.export rng_init, rand
 
 
 ;;
@@ -13,7 +20,7 @@
 ;;
 
 .data
-.space _VAR_SEED 2
+VAR_SEED: .res 2
 
 
 ;;
@@ -21,15 +28,14 @@
 ;;
 ;; Registers used: A
 ;;
-.scope
-.text
-rng_init:
+.code
+.proc rng_init
     lda REG_T1C_L
-    sta [_VAR_SEED+0]
+    sta VAR_SEED+0
     lda REG_T1C_H
-    sta [_VAR_SEED+1]
+    sta VAR_SEED+1
     rts
-.scend
+.endproc
 
 
 ;;
@@ -43,21 +49,18 @@ rng_init:
 ;;
 ;; Return Value: A
 ;;
-.scope
-.text
-rand:
+.code
+.proc rand
     ldy #8
-    lda [_VAR_SEED+0]
+    lda VAR_SEED+0
 _loop:
     asl
-    rol [_VAR_SEED+1]
+    rol VAR_SEED+1
     bcc _skip
     eor #$39
 _skip:
     dey
     bne _loop
-    sta [_VAR_SEED+0]
+    sta VAR_SEED+0
     rts
-.scend
-
-.scend
+.endproc

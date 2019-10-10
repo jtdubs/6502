@@ -1,0 +1,15 @@
+MEMORY {
+    RAM: start $0000, size $4000;
+    PC:  start $6000, size $0010;
+    ROM: start $8000, size $8000, file "%O";
+}
+
+SEGMENTS {
+    ZEROPAGE: load = RAM, type = zp;
+    STACK:    load = RAM, start = $0100, type = bss, optional = yes;
+    DATA:     load = RAM, start = $0200, type = bss, optional = yes;
+    PC:       load = PC,                 type = bss;
+    CODE:     load = ROM, start = $8000, type = ro;
+    RODATA:   load = ROM,                type = ro;
+    VECTORS:  load = ROM, start = $FFF4, type = overwrite;
+}

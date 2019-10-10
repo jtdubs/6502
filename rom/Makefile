@@ -1,19 +1,29 @@
-.PHONY: clean flash emulate
+.PHONY: dirs clean flash emulate
 
-all: out/rom.bin
+SOURCES = $(wildcard *.s)
+OBJECTS = $(addprefix obj/, $(SOURCES:.s=.o))
 
-out/rom.bin: *.s
-	ophis -c -v -o out/rom.bin -m out/rom.map -l out/rom.lst main.s
+all: dirs bin/rom.bin
 
-out/rom.hex: out/rom.bin
-	xxd -c 64 -g 0 out/rom.bin | cut -c5-138 | grep -Ev 'f{128}' > out/rom.hex
+bin/rom.bin: $(OBJECTS)
+	ld65 -C board.map -o bin/rom.bin -m bin/rom.map -v $(OBJECTS)
 
+bin/rom.hex: bin/rom.bin
+	xxd -c 64 -g 0 bin/rom.bin | cut -c5-138 | grep -Ev '0{128}' > bin/rom.hex
 
 clean:
-	rm -f out/*
+	rm -f obj/*
+	rm -f bin/*
 
-flash: out/rom.hex
-	-(sleep 2; echo L; cat out/rom.hex; echo ""; sleep 2) | microcom -s 115200 -p /dev/arduino_eeprom
+flash: bin/rom.hex
+	-(sleep 2; echo L; cat bin/rom.hex; echo ""; sleep 2) | microcom -s 115200 -p /dev/arduino_eeprom
 
-emulate: out/rom.bin
-	cd out && java -jar ~/tools/symon/target/symon-1.3.0-SNAPSHOT.jar -- -machine mymachine &
+emulate: bin/rom.bin
+	cd bin && java -jar ~/tools/symon/target/symon-1.3.0-SNAPSHOT.jar -- -machine mymachine &
+
+dirs:
+	mkdir -p obj/
+	mkdir -p bin/
+
+obj/%.o : %.s
+	ca65 -o $@ -l obj/$*.lst -v $<

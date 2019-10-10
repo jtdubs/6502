@@ -5,7 +5,11 @@
 ;; - delay_us - Delay by multiple of 10us
 ;; - delay_ms - Delay by multiple of 1ms
 ;;
-.scope
+.pc02
+
+
+;; Exports
+.export delay_us, delay_ms
 
 
 ;;
@@ -16,9 +20,8 @@
 ;;
 ;; Registers Used: A
 ;;
-.scope
-.text
-delay_us:
+.code
+.proc delay_us
     ;; pad loop w/ dummy jmp + nop so each iteration takes 10us
     jmp _dummy      ;; 3 cycles
 _dummy:
@@ -31,7 +34,7 @@ _cleanup:
     nop             ;; 2 cycles
     nop             ;; 2 cycles
     rts             ;; 8 cycles
-.scend
+.endproc
 
 
 ;;
@@ -42,9 +45,8 @@ _cleanup:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-delay_ms:
+.code
+.proc delay_ms
     ldx #198        ;; 2 cycles
 _loop:
     dex             ;; 2 cycles
@@ -54,6 +56,4 @@ _target:
     dec             ;; 2 cycles
     bne delay_ms    ;; 3 cycles
     rts             ;; 8 cycles
-.scend
-
-.scend
+.endproc

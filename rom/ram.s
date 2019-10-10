@@ -4,7 +4,11 @@
 ;; Exported Functions:
 ;; - ram_init - Initialize ram
 ;;
-.scope
+.pc02
+
+
+;; Exports
+.export ram_init
 
 
 ;;
@@ -14,16 +18,16 @@
 ;;
 ;; Registers Used: A, Y
 ;;
-.scope
-.data zp
-.space _VAR_PTR 2
-.text
-ram_init:
+.zeropage
+_VAR_PTR: .res 2
+
+.code
+.proc ram_init
     ;; _VAR_PTR = $0200
-    lda #[<$0200]
+    lda #<$0200
     sta _VAR_PTR
-    lda #[>$0200]
-    sta [_VAR_PTR+1]
+    lda #>$0200
+    sta _VAR_PTR+1
 _zero_page:
     ;; Start at page offset 0
     ldy #$00
@@ -35,13 +39,11 @@ _loop:
     bne _loop
 _next_page:
     ;; Increment RAM_PTR
-    lda [_VAR_PTR+1]
+    lda _VAR_PTR+1
     inc
-    sta [_VAR_PTR+1]
+    sta _VAR_PTR+1
     ;; Loop until up to $4000
     cmp #$40
     bne _zero_page
     rts
-.scend
-
-.scend
+.endproc

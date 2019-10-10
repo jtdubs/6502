@@ -20,64 +20,85 @@
 ;; - dsp_blit           - Blit a buffer to the display
 ;;
 ;; Local Functions:
-;; - _dsp_wait_idle     - Wait for display idle
+;; - dsp_wait_idle     - Wait for display idle
 ;;
-.scope
+.pc02
+
+
+;; Imports from Peripheral Controller
+.import REG_IOA, REG_IOB, REG_DDRA, REG_DDRB
+.importzp DIR_IN, DIR_OUT
+
+;; Imports from Delay
+.import delay_us
+
+;; Exports
+.exportzp VAR_DSP_MESSAGE_PTR
+.export dsp_init
+.export dsp_clear
+.export dsp_home
+.export dsp_display_on, dsp_display_off
+.export dsp_cursor_on, dsp_cursor_off
+.export dsp_blink_on, dsp_blink_off
+.export dsp_scroll_left, dsp_scroll_right
+.export dsp_autoscroll_on, dsp_autoscroll_off
+.export dsp_print_1, dsp_print_2
+.export dsp_blit
 
 
 ;;
 ;; Display Control Lines
 ;;
-.alias _RS $20
-.alias _RW $40
-.alias _E  $80
+RS = $20
+RW = $40
+E  = $80
 
 
 ;;
 ;; Functions IDs
 ;;
-.alias _FN_CLEAR           $01
-.alias _FN_HOME            $02
-.alias _FN_ENTRY_MODE      $04
-.alias _FN_DISPLAY_CONTROL $08
-.alias _FN_SHIFT           $10
-.alias _FN_FUNCTION_SET    $20
-.alias _FN_SET_CGRAM_ADDR  $40
-.alias _FN_SET_DDRAM_ADDR  $80
+FN_CLEAR           = $01
+FN_HOME            = $02
+FN_ENTRY_MODE      = $04
+FN_DISPLAY_CONTROL = $08
+FN_SHIFT           = $10
+FN_FUNCTION_SET    = $20
+FN_SET_CGRAM_ADDR  = $40
+FN_SET_DDRAM_ADDR  = $80
 
 
 ;;
 ;; Function Parameters
 ;;
-.alias _PARAM_ENTRY_MODE_INC   $02
-.alias _PARAM_ENTRY_MODE_DEC   $00
-.alias _PARAM_ENTRY_MODE_SHIFT $01
+PARAM_ENTRY_MODE_INC   = $02
+PARAM_ENTRY_MODE_DEC   = $00
+PARAM_ENTRY_MODE_SHIFT = $01
 
-.alias _PARAM_DC_DISPLAY_ON    $04
-.alias _PARAM_DC_CURSOR_ON     $02
-.alias _PARAM_DC_BLINK_ON      $01
+PARAM_DC_DISPLAY_ON    = $04
+PARAM_DC_CURSOR_ON     = $02
+PARAM_DC_BLINK_ON      = $01
 
-.alias _PARAM_SHIFT_SCREEN     $80
-.alias _PARAM_SHIFT_CURSOR     $00
-.alias _PARAM_SHIFT_RIGHT      $40
-.alias _PARAM_SHIFT_LEFT       $00
+PARAM_SHIFT_SCREEN     = $80
+PARAM_SHIFT_CURSOR     = $00
+PARAM_SHIFT_RIGHT      = $40
+PARAM_SHIFT_LEFT       = $00
 
-.alias _PARAM_FN_8BIT          $10
-.alias _PARAM_FN_4BIT          $00
-.alias _PARAM_FN_2LINE         $08
-.alias _PARAM_FN_1LINE         $00
-.alias _PARAM_FN_5x10          $04
-.alias _PARAM_FN_5x8           $00
+PARAM_FN_8BIT          = $10
+PARAM_FN_4BIT          = $00
+PARAM_FN_2LINE         = $08
+PARAM_FN_1LINE         = $00
+PARAM_FN_5x10          = $04
+PARAM_FN_5x8           = $00
 
-.alias _BUSY_FLAG              $80
+BUSY_FLAG              = $80
 
 
 ;;
 ;; Zero-page Variables
 ;;
 
-.data zp
-.space VAR_DSP_MESSAGE_PTR 2
+.zeropage
+VAR_DSP_MESSAGE_PTR: .res 2
 
 
 ;;
@@ -85,9 +106,9 @@
 ;;
 
 .data
-.space _VAR_FUNCTION 1
-.space _VAR_CONTROL  1
-.space _VAR_MODE     1
+VAR_FUNCTION: .res 1
+VAR_CONTROL:  .res 1
+VAR_MODE:     .res 1
 
 
 ;;
@@ -97,26 +118,25 @@
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_init:
-    ldx #_E
+.code
+.proc dsp_init
+    ldx #E
 
     ;;
     ;; Initialize variables with default values for each function
     ;;
 
     ;; 8-bit chars, 2 line display, 5x8 font
-    lda #[_FN_FUNCTION_SET | _PARAM_FN_8BIT | _PARAM_FN_2LINE | _PARAM_FN_5x8]
-    sta _VAR_FUNCTION
+    lda #(FN_FUNCTION_SET | PARAM_FN_8BIT | PARAM_FN_2LINE | PARAM_FN_5x8)
+    sta VAR_FUNCTION
 
     ;; display, cursor & blink on
-    lda #[_FN_DISPLAY_CONTROL | _PARAM_DC_DISPLAY_ON]
-    sta _VAR_CONTROL
+    lda #(FN_DISPLAY_CONTROL | PARAM_DC_DISPLAY_ON)
+    sta VAR_CONTROL
 
     ;; auto-increment on output
-    lda #[_FN_ENTRY_MODE | _PARAM_ENTRY_MODE_INC]
-    sta _VAR_MODE
+    lda #(FN_ENTRY_MODE | PARAM_ENTRY_MODE_INC)
+    sta VAR_MODE
 
 
     ;;
@@ -124,35 +144,35 @@ dsp_init:
     ;;
 
     ;; call "Function Set"
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
     stx REG_IOA
-    lda _VAR_FUNCTION
+    lda VAR_FUNCTION
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Display Control"
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
     stx REG_IOA
-    lda _VAR_CONTROL
+    lda VAR_CONTROL
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Entry mode Set"
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
     stx REG_IOA
-    lda _VAR_MODE
+    lda VAR_MODE
     sta REG_IOB
     stz REG_IOA
 
     ;; Call "Clear display"
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
     stx REG_IOA
-    lda #_FN_CLEAR
+    lda #FN_CLEAR
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -162,20 +182,19 @@ dsp_init:
 ;;
 ;; Registers Used: A
 ;;
-.scope
-.text
-dsp_clear:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_clear
+    jsr dsp_wait_idle
 
     ;; Call "Clear"
-    lda #_E
+    lda #E
     sta REG_IOA
-    lda #_FN_CLEAR
+    lda #FN_CLEAR
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -185,20 +204,19 @@ dsp_clear:
 ;;
 ;; Registers Used: A
 ;;
-.scope
-.text
-dsp_home:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_home
+    jsr dsp_wait_idle
 
     ;; Call "Home"
-    lda #_E
+    lda #E
     sta REG_IOA
-    lda #_FN_HOME
+    lda #FN_HOME
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -208,24 +226,23 @@ dsp_home:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_display_on:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_display_on
+    jsr dsp_wait_idle
 
     ;; set Display bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    ora #_PARAM_DC_DISPLAY_ON
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_DISPLAY_ON
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -235,24 +252,23 @@ dsp_display_on:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_display_off:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_display_off
+    jsr dsp_wait_idle
 
     ;; clear Display bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    and #[$FF ^ _PARAM_DC_DISPLAY_ON]
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    and #($FF ^ PARAM_DC_DISPLAY_ON)
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -262,24 +278,23 @@ dsp_display_off:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_cursor_on:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_cursor_on
+    jsr dsp_wait_idle
 
     ;; set Cursor bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    ora #_PARAM_DC_CURSOR_ON
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_CURSOR_ON
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -289,24 +304,23 @@ dsp_cursor_on:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_cursor_off:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_cursor_off
+    jsr dsp_wait_idle
 
     ;; clear Cursor bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    and #[$FF ^ _PARAM_DC_CURSOR_ON]
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    and #($FF ^ PARAM_DC_CURSOR_ON)
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -316,24 +330,23 @@ dsp_cursor_off:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_blink_on:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_blink_on
+    jsr dsp_wait_idle
 
     ;; set Blink bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    ora #_PARAM_DC_BLINK_ON
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    ora #PARAM_DC_BLINK_ON
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -343,24 +356,23 @@ dsp_blink_on:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_blink_off:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_blink_off
+    jsr dsp_wait_idle
 
     ;; clear Cursor bit in VAR_DSP_CONTROL
-    lda _VAR_CONTROL
-    and #[$FF ^ _PARAM_DC_BLINK_ON]
-    sta _VAR_CONTROL
+    lda VAR_CONTROL
+    and #($FF ^ PARAM_DC_BLINK_ON)
+    sta VAR_CONTROL
 
     ;; call "Display Control" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -370,20 +382,19 @@ dsp_blink_off:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_scroll_left:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_scroll_left
+    jsr dsp_wait_idle
 
     ;; call "Shift" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
-    lda #[_FN_SHIFT | _PARAM_SHIFT_SCREEN | _PARAM_SHIFT_LEFT]
+    lda #(FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_LEFT)
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -393,20 +404,19 @@ dsp_scroll_left:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_scroll_right:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_scroll_right
+    jsr dsp_wait_idle
 
     ;; call "Shift" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
-    lda #[_FN_SHIFT | _PARAM_SHIFT_SCREEN | _PARAM_SHIFT_RIGHT]
+    lda #(FN_SHIFT | PARAM_SHIFT_SCREEN | PARAM_SHIFT_RIGHT)
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -416,24 +426,23 @@ dsp_scroll_right:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_autoscroll_on:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_autoscroll_on
+    jsr dsp_wait_idle
 
     ;; set Shift bit in VAR_DSP_MODE
-    lda _VAR_MODE
-    ora #_PARAM_ENTRY_MODE_SHIFT
-    sta _VAR_MODE
+    lda VAR_MODE
+    ora #PARAM_ENTRY_MODE_SHIFT
+    sta VAR_MODE
 
     ;; call "Entry Mode" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -443,24 +452,23 @@ dsp_autoscroll_on:
 ;;
 ;; Registers Used: A, X
 ;;
-.scope
-.text
-dsp_autoscroll_off:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_autoscroll_off
+    jsr dsp_wait_idle
 
     ;; clear Shift bit in VAR_DSP_MODE
-    lda _VAR_MODE
-    and #[$FF ^ _PARAM_ENTRY_MODE_SHIFT]
-    sta _VAR_MODE
+    lda VAR_MODE
+    and #($FF ^ PARAM_ENTRY_MODE_SHIFT)
+    sta VAR_MODE
 
     ;; call "Entry Mode" function
-    ldx #_E
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
     rts
-.scend
+.endproc
 
 
 ;;
@@ -468,19 +476,18 @@ dsp_autoscroll_off:
 ;;
 ;; Registers Used: A, Y
 ;;
-.scope
-.text
-dsp_print_1:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_print_1
+    jsr dsp_wait_idle
 
     ;; set ddram address to 0 (start of line 1)
-    lda #[_FN_SET_DDRAM_ADDR | $00]
-    ldx #_E
+    lda #(FN_SET_DDRAM_ADDR | $00)
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -495,9 +502,9 @@ _loop:
     sta REG_IOB
 
     ;; pulse E
-    lda #[_RS | _E]
+    lda #(RS | E)
     sta REG_IOA
-    lda #_RS
+    lda #RS
     sta REG_IOA
 
     ;; wait for character to write (40us)
@@ -510,7 +517,7 @@ _loop:
 
 _end:
     rts
-.scend
+.endproc
 
 
 ;;
@@ -518,19 +525,18 @@ _end:
 ;;
 ;; Registers Used: A, Y
 ;;
-.scope
-.text
-dsp_print_2:
-    jsr _dsp_wait_idle
+.code
+.proc dsp_print_2
+    jsr dsp_wait_idle
 
     ;; set ddram address to $40 (start of line 2)
-    lda #[_FN_SET_DDRAM_ADDR | $40]
-    ldx #_E
+    lda #(FN_SET_DDRAM_ADDR | $40)
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -545,9 +551,9 @@ _loop:
     sta REG_IOB
 
     ;; pulse E
-    lda #[_RS | _E]
+    lda #(RS | E)
     sta REG_IOA
-    lda #_RS
+    lda #RS
     sta REG_IOA
 
     ;; wait for character to write (40us)
@@ -560,7 +566,7 @@ _loop:
 
 _end:
     rts
-.scend
+.endproc
 
 
 ;;
@@ -568,20 +574,19 @@ _end:
 ;;
 ;; Registers Used: A, Y
 ;;
-.scope
-.text
-dsp_blit:
+.code
+.proc dsp_blit
 _setup_1:
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ;; set ddram address to 0 (start of line 1)
-    lda #[_FN_SET_DDRAM_ADDR | $00]
-    ldx #_E
+    lda #(FN_SET_DDRAM_ADDR | $00)
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ldy #$00 ;; Y is array index
 
@@ -591,9 +596,9 @@ _loop_1:
     sta REG_IOB
 
     ;; pulse E
-    lda #[_RS | _E]
+    lda #(RS | E)
     sta REG_IOA
-    lda #_RS
+    lda #RS
     sta REG_IOA
 
     ;; wait for character to write (40us)
@@ -606,16 +611,16 @@ _loop_1:
     bmi _loop_1
 
 _setup_2:
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ;; set ddram address to $40 (start of line 2)
-    lda #[_FN_SET_DDRAM_ADDR | $40]
-    ldx #_E
+    lda #(FN_SET_DDRAM_ADDR | $40)
+    ldx #E
     stx REG_IOA
     sta REG_IOB
     stz REG_IOA
 
-    jsr _dsp_wait_idle
+    jsr dsp_wait_idle
 
     ldy #$40 ;; Y is array index
 
@@ -625,9 +630,9 @@ _loop_2:
     sta REG_IOB
 
     ;; pulse E
-    lda #[_RS | _E]
+    lda #(RS | E)
     sta REG_IOA
-    lda #_RS
+    lda #RS
     sta REG_IOA
 
     ;; wait for character to write (40us)
@@ -641,38 +646,35 @@ _loop_2:
 
 _end:
     rts
-.scend
+.endproc
 
 
 ;;
-;; _dsp_wait_idle: Wait for display idle
+;; dsp_wait_idle: Wait for display idle
 ;;
 ;; Parameters: None
 ;;
 ;; Registers Used: A
 ;;
-.text
-_dsp_wait_idle:
-.scope
+.code
+.proc dsp_wait_idle
     ;; set port B to input
-    lda #DIR_IN
+    lda #<DIR_IN
     sta REG_DDRB
 
     ;; set flags for reading the instruction register
-    lda #[_RW | _E]
+    lda #(RW | E)
     sta REG_IOA
 
 _loop:
     ;; read the instruction register and loop until not busy
     lda REG_IOB
-    and #_BUSY_FLAG
+    and #BUSY_FLAG
     bne _loop
 
 _cleanup:
     ;; set port B back to output
-    lda #DIR_OUT
+    lda #<DIR_OUT
     sta REG_DDRB
     rts
-.scend
-
-.scend
+.endproc

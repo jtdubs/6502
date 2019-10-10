@@ -3,62 +3,70 @@
 ;;
 ;; Exported Functions:
 ;; - per_init - Initialize the controller
-.scope
+.pc02
+
+
+;; Exports
+.export IER_SET, IER_CLR, IFR_IRQ, IRQ_TIMER_1, IRQ_TIMER_2, IRQ_CB1, IRQ_CB2, IRQ_SR, IRQ_CA1, IRQ_CA2
+.export IO_A_NES_DATA, IO_A_NES_LATCH, IO_A_NES_CLK, IO_A_DSP_RS, IO_A_DSP_RW, IO_A_DSP_E
+.export REG_IOB, REG_IOA_HS, REG_DDRB, REG_DDRA, REG_T1C_L, REG_T1C_H, REG_T1L_L, REG_T1L_H, REG_T2C_L, REG_T2C_H, REG_SR, REG_ACR, REG_PCR, REG_IFR, REG_IER, REG_IOA
+.export DIR_IN, DIR_OUT
+.export per_init
 
 
 ;;
 ;; Memory-mapped Regiser
 ;;
-.data pc
-.space REG_IOB    1
-.space REG_IOA_HS 1
-.space REG_DDRB   1
-.space REG_DDRA   1
-.space REG_T1C_L  1
-.space REG_T1C_H  1
-.space REG_T1L_L  1
-.space REG_T1L_H  1
-.space REG_T2C_L  1
-.space REG_T2C_H  1
-.space REG_SR     1
-.space REG_ACR    1
-.space REG_PCR    1
-.space REG_IFR    1
-.space REG_IER    1
-.space REG_IOA    1
+.segment "PC"
+REG_IOB:    .res 1
+REG_IOA_HS: .res 1
+REG_DDRB:   .res 1
+REG_DDRA:   .res 1
+REG_T1C_L:  .res 1
+REG_T1C_H:  .res 1
+REG_T1L_L:  .res 1
+REG_T1L_H:  .res 1
+REG_T2C_L:  .res 1
+REG_T2C_H:  .res 1
+REG_SR:     .res 1
+REG_ACR:    .res 1
+REG_PCR:    .res 1
+REG_IFR:    .res 1
+REG_IER:    .res 1
+REG_IOA:    .res 1
 
+.rodata
 
 ;;
 ;; DDR directions
 ;;
-.alias DIR_IN  $00
-.alias DIR_OUT $FF
+DIR_IN  = $00
+DIR_OUT = $FF
 
 
 ;;
 ;; Interrupt flags
 ;;
-.alias IER_SET     $80
-.alias IER_CLR     $00
-.alias IFR_IRQ     $80
-.alias IRQ_TIMER_1 $40
-.alias IRQ_TIMER_2 $20
-.alias IRQ_CB1     $10
-.alias IRQ_CB2     $08
-.alias IRQ_SR      $04
-.alias IRQ_CA1     $02
-.alias IRQ_CA2     $01
-
+IER_SET     = $80
+IER_CLR     = $00
+IFR_IRQ     = $80
+IRQ_TIMER_1 = $40
+IRQ_TIMER_2 = $20
+IRQ_CB1     = $10
+IRQ_CB2     = $08
+IRQ_SR      = $04
+IRQ_CA1     = $02
+IRQ_CA2     = $01
 
 ;;
 ;; Port A masks for buttons vs. display control lines
 ;;
-.alias IO_A_NES_DATA  $01
-.alias IO_A_NES_LATCH $02
-.alias IO_A_NES_CLK   $04
-.alias IO_A_DSP_RS    $20
-.alias IO_A_DSP_RW    $40
-.alias IO_A_DSP_E     $80
+IO_A_NES_DATA  = $01
+IO_A_NES_LATCH = $02
+IO_A_NES_CLK   = $04
+IO_A_DSP_RS    = $20
+IO_A_DSP_RW    = $40
+IO_A_DSP_E     = $80
 
 
 ;;
@@ -68,11 +76,10 @@
 ;;
 ;; Registers Used: A
 ;;
-.scope
-.text
-per_init:
+.code
+.proc per_init
     ;; set output pins on port A (NES controller + Display control lines)
-    lda #[IO_A_NES_CLK | IO_A_NES_LATCH | IO_A_DSP_RS | IO_A_DSP_RW | IO_A_DSP_E]
+    lda #(IO_A_NES_CLK | IO_A_NES_LATCH | IO_A_DSP_RS | IO_A_DSP_RW | IO_A_DSP_E)
     sta REG_DDRA
 
     ;; set display data pins to outputs
@@ -80,6 +87,4 @@ per_init:
     sta REG_DDRB
 
     rts
-.scend
-
-.scend
+.endproc
