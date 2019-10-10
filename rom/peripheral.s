@@ -53,8 +53,12 @@
 ;;
 ;; Port A masks for buttons vs. display control lines
 ;;
-.alias IO_A_BTN_MASK $1F
-.alias IO_A_DSP_MASK $E0
+.alias IO_A_NES_DATA  $01
+.alias IO_A_NES_LATCH $02
+.alias IO_A_NES_CLK   $04
+.alias IO_A_DSP_RS    $20
+.alias IO_A_DSP_RW    $40
+.alias IO_A_DSP_E     $80
 
 
 ;;
@@ -67,8 +71,8 @@
 .scope
 .text
 per_init:
-    ;; set display control pins to outputs
-    lda #IO_A_DSP_MASK
+    ;; set output pins on port A (NES controller + Display control lines)
+    lda #[IO_A_NES_CLK | IO_A_NES_LATCH | IO_A_DSP_RS | IO_A_DSP_RW | IO_A_DSP_E]
     sta REG_DDRA
 
     ;; set display data pins to outputs

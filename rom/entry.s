@@ -39,10 +39,10 @@ on_reset:
     ;; initialize variables
     stz _VAR_IRQ_COUNTER
 
-    ;; set timer to fire every 50000 cycles (50ms)
-    lda #[<50000]
+    ;; set timer to fire every 50000 cycles (10ms)
+    lda #[<10000]
     sta REG_T1C_L
-    lda #[>50000]
+    lda #[>10000]
     sta REG_T1C_H
 
     ;; set timer 1 to continuous, free-run mode
@@ -83,10 +83,13 @@ _timer_1:
     inc _VAR_IRQ_COUNTER
     lda _VAR_IRQ_COUNTER
 
-    ;; if 250ms has elapsed, let the game do something and clear the IRQ_COUNTER
-    cmp #5
+    ;; if 10ms elapsed, process input
+    .invoke input_tick
+
+    ;; if 250ms has elapsed,refresh display
+    cmp #25
     bcc _end
-    .invoke game_interrupt
+    .invoke display_tick
     stz _VAR_IRQ_COUNTER
 
 _not_timer_1:

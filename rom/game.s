@@ -32,11 +32,14 @@
 ;;
 ;; Buttons
 ;;
-.alias _BTN_TRIGGER  $01
-.alias _BTN_UP       $02
+.alias _BTN_A        $80
+.alias _BTN_B        $40
+.alias _BTN_SELECT   $20
+.alias _BTN_START    $10
+.alias _BTN_UP       $08
 .alias _BTN_DOWN     $04
-.alias _BTN_LEFT     $08
-.alias _BTN_RIGHT    $10
+.alias _BTN_LEFT     $02
+.alias _BTN_RIGHT    $01
 
 
 ;;
@@ -47,8 +50,8 @@
 .alias _N_ENEMIES 4
 
 .data
-.space VAR_TICK           1   ;; counts 250ms ticks
-.space _VAR_BUTTON_STATE  1   ;; button state
+.space VAR_DISPLAY_TICK   1   ;; ticks at 4hz
+.space VAR_INPUT_TICK     1   ;; ticks at 100hz
 .space _VAR_BUTTON_EVENTS 1   ;; button events for this tick
 .space _VAR_POS           1   ;; player position
 .space _VAR_ENEMIES       4   ;; enemy positions
@@ -78,8 +81,8 @@ sprite_explosion: .byte $2A
 _game_init:
 .scope
     ;; zero tick counter, button state, position
-    stz VAR_TICK
-    stz _VAR_BUTTON_STATE
+    stz VAR_DISPLAY_TICK
+    stz VAR_INPUT_TICK
     stz _VAR_POS
     stz _VAR_END_GAME
 
@@ -149,22 +152,24 @@ _game_loop:
     lda _VAR_END_GAME
     bne _end
 
-    ;; handle game tick
-    lda VAR_TICK
-    bne _on_tick
+    ;; handle input ticks
+    lda VAR_INPUT_TICK
+    bne _on_input_tick
 
-    ;; if button state un changed, loop
-    lda REG_IOA
-    cmp _VAR_BUTTON_STATE
-    beq _game_loop
+_check_display_tick:
+    ;; handle display ticks
+    lda VAR_DISPLAY_TICK
+    bne _on_display_tick
 
-_on_button_changed:
-    jsr _game_sample_buttons
     jmp _game_loop
 
-_on_tick:
-    stz VAR_TICK
+_on_input_tick:
+    stz VAR_INPUT_TICK
     jsr _game_sample_buttons
+    jmp _check_display_tick
+
+_on_display_tick:
+    stz VAR_DISPLAY_TICK
     jsr _game_handle_input
     jsr _game_spawn_enemies
     jsr _game_update_lasers
@@ -185,14 +190,73 @@ _end:
 .text
 _game_sample_buttons:
 .scope
-    ;; sample 2ms apart and OR together to de-bounce
-    lda REG_IOA
-    pha
-    lda #2
-    jsr delay_ms
-    pla
-    ora REG_IOA
-    sta _VAR_BUTTON_STATE
+    ;; setup Y for high CLK value
+    ldy #IO_A_NES_CLK
+
+    ;; latch high for 12us
+    lda #IO_A_NES_LATCH
+    sta REG_IOA
+    lda #$00
+    nop
+    nop
+    nop
+    stz REG_IOA
+
+    ;; read A
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read B
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Select
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Start
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Up
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Down
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Left
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    asl
+    stz REG_IOA
+
+    ;; read Right
+    eor REG_IOA
+    sty REG_IOA
+    nop
+    nop
+    stz REG_IOA
 
     ;; include in button events
     and _VAR_BUTTON_EVENTS
@@ -572,36 +636,40 @@ _game_intro:
     sta [VAR_DSP_MESSAGE_PTR+1]
     jsr dsp_print_2
 
-_loop:
-    ;; if button state unchanged, loop
-    lda REG_IOA
-    cmp _VAR_BUTTON_STATE
-    beq _loop
+_input_loop:
+    ;; handle input ticks
+    lda VAR_INPUT_TICK
+    beq _input_loop
 
+_on_input_tick:
+    ;; loop until BTN_A
+    stz VAR_INPUT_TICK
     jsr _game_sample_buttons
-
     lda _VAR_BUTTON_EVENTS
-    and #_BTN_TRIGGER
-    bne _loop
+    and #_BTN_A
+    bne _input_loop
 
-_end:
-    ;; seed RNG based on current timer value
+_setup:
+    ;; init rng
     jsr rng_init
 
-    ;; claer display
+    ;; clear display
     jsr dsp_clear
 
     ;; reset state for main game
     lda #$FF
     sta _VAR_BUTTON_EVENTS
 
-    ;; wait for 1 second (4 ticks)
-    stz VAR_TICK
+    ;; wait for 1 second (4 display ticks)
+    stz VAR_DISPLAY_TICK
 _delay_loop:
-    lda VAR_TICK
+    lda VAR_DISPLAY_TICK
     cmp #4
     bcc _delay_loop
-    stz VAR_TICK
+
+    ;; clear tick counters
+    stz VAR_DISPLAY_TICK
+    stz VAR_INPUT_TICK
 
     rts
 .scend
@@ -626,29 +694,32 @@ _game_outro:
     sta [VAR_DSP_MESSAGE_PTR+1]
     jsr dsp_print_2
 
-_loop:
-    ;; if button state unchanged, loop
-    lda REG_IOA
-    cmp _VAR_BUTTON_STATE
-    beq _loop
+_input_loop:
+    ;; handle input ticks
+    lda VAR_INPUT_TICK
+    beq _input_loop
 
+_on_input_tick:
+    ;; loop until BTN_A
+    stz VAR_INPUT_TICK
     jsr _game_sample_buttons
-
     lda _VAR_BUTTON_EVENTS
-    and #_BTN_TRIGGER
-    bne _loop
+    and #_BTN_A
+    bne _input_loop
 
-_end:
-    ;; claer display
+_reset:
+    ;; clear display
     jsr dsp_clear
 
-    ;; wait for 0.5 second (2 ticks)
-    stz VAR_TICK
+    ;; wait for 0.5 second (2 display ticks)
+    stz VAR_DISPLAY_TICK
 _delay_loop:
-    lda VAR_TICK
+    lda VAR_DISPLAY_TICK
     cmp #2
     bcc _delay_loop
-    stz VAR_TICK
+
+    stz VAR_DISPLAY_TICK
+    stz VAR_INPUT_TICK
 
     rts
 .scend
@@ -724,10 +795,14 @@ _explosion_done:
 
 
 ;;
-;; 250ms Interrupt Macro
+;; Interrupt Macros
 ;;
-.macro game_interrupt
-    inc VAR_TICK
+.macro display_tick
+    inc VAR_DISPLAY_TICK
+.macend
+
+.macro input_tick
+    inc VAR_INPUT_TICK
 .macend
 
 .scend
