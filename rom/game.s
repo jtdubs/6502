@@ -9,7 +9,6 @@
 ;; - game_intro          - Show the intro screen
 ;; - game_outro          - Show the outro screen
 ;; - game_loop           - The main loop
-;; - game_interrupt      - Macro to handle 250ms ticks
 ;; - game_handle_input   - Handle input
 ;; - game_spawn_enemies  - Spawn random enemies
 ;; - game_update_enemies - Update enemy positions
