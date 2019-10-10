@@ -1,7 +1,4 @@
-*.bin
-*.hex
-*.map
-*.lst
 *.swp
-*.o
 *.dwf3work
+obj/
+bin/
