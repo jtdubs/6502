@@ -19,7 +19,7 @@
 ;; - _game_on_down        - Handle down button
 ;; - _game_on_left        - Handle left button
 ;; - _game_on_right       - Handle right button
-;; - _game_on_trigger     - Handle trigger button
+;; - _game_on_btn_a       - Handle A button
 ;;
 .scope
 
@@ -272,46 +272,41 @@ _game_sample_buttons:
 .text
 _game_handle_input:
 .scope
-_check_up:
-    lda _VAR_BUTTON_EVENTS
-    tax
-    and #_BTN_UP
-    beq _on_up
-_check_down:
-    txa
-    and #_BTN_DOWN
-    beq _on_down
-_check_left:
-    txa
-    and #_BTN_LEFT
-    beq _on_left
-_check_right:
-    txa
-    and #_BTN_RIGHT
-    beq _on_right
-_check_trigger:
-    txa
-    and #_BTN_TRIGGER
-    beq _on_trigger
+    asl _VAR_BUTTON_EVENTS
+    bcs _1
+    jsr _game_on_btn_a
+_1:
+    asl _VAR_BUTTON_EVENTS
+    bcs _2
+    nop ;; no use for B
+_2:
+    asl _VAR_BUTTON_EVENTS
+    bcs _3
+    nop ;; no use for Select
+_3:
+    asl _VAR_BUTTON_EVENTS
+    bcs _4
+    nop ;; no use for Start
+_4:
+    asl _VAR_BUTTON_EVENTS
+    bcs _5
+    jsr _game_on_up
+_5:
+    asl _VAR_BUTTON_EVENTS
+    bcs _6
+    jsr _game_on_down
+_6:
+    asl _VAR_BUTTON_EVENTS
+    bcs _7
+    jsr _game_on_left
+_7:
+    asl _VAR_BUTTON_EVENTS
+    bcs _end
+    jsr _game_on_right
 _end:
     lda #$FF
     sta _VAR_BUTTON_EVENTS
     rts
-_on_up:
-    jsr _game_on_up
-    jmp _check_down
-_on_down:
-    jsr _game_on_down
-    jmp _check_left
-_on_left:
-    jsr _game_on_left
-    jmp _check_right
-_on_right:
-    jsr _game_on_right
-    jmp _check_trigger
-_on_trigger:
-    jsr _game_on_trigger
-    jmp _end
 .scend
 
 
@@ -591,10 +586,10 @@ _end:
 
 
 ;;
-;; _game_on_trigger - Fire a laser
+;; _game_on_btn_a - Fire a laser
 ;;
 .text
-_game_on_trigger:
+_game_on_btn_a:
 .scope
     ;; for each laser
     ldy #_N_LASERS
